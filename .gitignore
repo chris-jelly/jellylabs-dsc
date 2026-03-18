@@ -24,3 +24,6 @@ override.tf.json
 # OpenTofu-specific state backup artifacts
 *.tofu.tfstate
 *.tofu.tfstate.*
+
+# opencode
+.opencode
