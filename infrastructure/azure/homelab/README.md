@@ -25,6 +25,11 @@ This stack now uses committed resource configuration plus declarative `import` b
 3. Run `tofu plan` to preview the import actions and any post-import drift.
 4. Run `tofu apply` to perform the imports.
 5. Run `tofu plan` again and reconcile any remaining drift until the plan is clean or intentionally understood.
+6. Once the Azure bootstrap backend exists, migrate local state into Azure Blob Storage with:
+
+```bash
+tofu init -migrate-state -backend-config=backend.hcl
+```
 
 ## Discovery Commands
 
