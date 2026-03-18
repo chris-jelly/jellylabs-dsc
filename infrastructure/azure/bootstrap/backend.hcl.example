@@ -1,0 +1,4 @@
+resource_group_name  = "rg-tfstate-homelab"
+storage_account_name = "sttfstatehomelab"
+container_name       = "tfstate"
+key                  = "azure/homelab/platform.tfstate"

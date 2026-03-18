@@ -1,0 +1,34 @@
+name: infrastructure-validate
+
+on:
+  pull_request:
+    paths:
+      - "infrastructure/**"
+      - ".github/workflows/infrastructure-validate.yml"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install OpenTofu
+        uses: opentofu/setup-opentofu@v1
+      - name: Check formatting
+        run: tofu fmt -check -recursive infrastructure
+      - name: Azure init and validate
+        run: |
+          cd infrastructure/azure
+          tofu init -backend=false
+          tofu validate
+      - name: AWS init and validate
+        run: |
+          cd infrastructure/aws
+          tofu init -backend=false
+          tofu validate
+      - name: Plan guidance
+        run: |
+          printf '%s\n' 'PR validation should run non-destructive plans only after backend and OIDC configuration are populated.'
