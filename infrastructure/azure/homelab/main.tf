@@ -80,3 +80,34 @@ resource "azurerm_storage_account" "homelab_backups" {
     prevent_destroy = true
   }
 }
+
+resource "azurerm_storage_container" "mealie" {
+  name                  = "mealie"
+  storage_account_id    = azurerm_storage_account.homelab_backups.id
+  container_access_type = "private"
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "azurerm_user_assigned_identity" "mealie_backup" {
+  name                = "id-mealie-backup"
+  location            = azurerm_resource_group.jellyhomelab.location
+  resource_group_name = azurerm_resource_group.jellyhomelab.name
+  tags                = {}
+}
+
+resource "azurerm_federated_identity_credential" "mealie_backup" {
+  name      = "fic-mealie-backup"
+  parent_id = azurerm_user_assigned_identity.mealie_backup.id
+  issuer    = var.kubernetes_oidc_issuer_url
+  subject   = "system:serviceaccount:${var.mealie_backup_namespace}:${var.mealie_backup_service_account_name}"
+  audience  = ["api://AzureADTokenExchange"]
+}
+
+resource "azurerm_role_assignment" "mealie_backup_blob_contributor" {
+  scope                = azurerm_storage_container.mealie.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azurerm_user_assigned_identity.mealie_backup.principal_id
+}

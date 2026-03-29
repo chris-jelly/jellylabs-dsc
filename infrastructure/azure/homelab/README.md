@@ -8,6 +8,8 @@ This stack models the current Azure homelab support resources for first-wave imp
 - `rg-work-integrations`
 - Two existing Key Vault resources used for Kubernetes secret sync
 - `sthomelabbackups`
+- `mealie` blob container inside `sthomelabbackups`
+- Mealie backup workload identity resources
 
 ## Out of Scope
 
@@ -72,3 +74,19 @@ azurerm_storage_account.homelab_backups
 - `tofu state show <address>` is useful after import to inspect what the provider recorded.
 - Expect a few plan/fix cycles for brownfield resources, especially for Key Vault and storage account settings.
 - Keep secret values out of scope; this stack manages the vault resources, not the secrets themselves.
+
+## Workload Identity Inputs
+
+This stack now includes Azure workload identity resources for Mealie backups.
+
+- Set `kubernetes_oidc_issuer_url` to the homelab cluster's OIDC issuer URL before apply.
+- `mealie_backup_namespace` defaults to `mealie`.
+- `mealie_backup_service_account_name` defaults to `mealie-backup`.
+
+## Mealie Backup Layout
+
+- Container: `mealie`
+- CNPG prefix: `db/`
+- File-backup prefix: `files/`
+
+See `infrastructure/azure/homelab/MEALIE_BACKUP_HANDOFF.md` for the cross-repo implementation package that the homelab repo should consume.
