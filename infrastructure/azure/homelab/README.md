@@ -22,9 +22,15 @@ This stack manages Azure resources that support the homelab environment.
 
 This stack includes Azure workload identity resources for Mealie backups.
 
-- Set `kubernetes_oidc_issuer_url` to the homelab cluster's Arc-managed OIDC issuer URL before apply.
+- Set `kubernetes_oidc_issuer_url` in `homelab.auto.tfvars` so OpenTofu loads it automatically for every `tofu plan` and `tofu apply`.
 - `mealie_backup_namespace` defaults to `mealie`.
 - `mealie_backup_service_account_name` defaults to `mealie-backup`.
+
+Create `infrastructure/azure/homelab/homelab.auto.tfvars` with:
+
+```hcl
+kubernetes_oidc_issuer_url = "https://<your-arc-oidc-issuer>"
+```
 
 Fetch the issuer URL from Azure Arc with:
 
@@ -41,3 +47,4 @@ az connectedk8s show \
 - Container: `mealie`
 - CNPG prefix: `db/`
 - File-backup prefix: `files/`
+- Azure lifecycle retention deletes blobs under `mealie/files/` after 60 days

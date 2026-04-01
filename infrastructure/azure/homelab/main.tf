@@ -91,6 +91,26 @@ resource "azurerm_storage_container" "mealie" {
   }
 }
 
+resource "azurerm_storage_management_policy" "homelab_backups" {
+  storage_account_id = azurerm_storage_account.homelab_backups.id
+
+  rule {
+    name    = "delete-mealie-file-backups-after-60-days"
+    enabled = true
+
+    filters {
+      blob_types   = ["blockBlob"]
+      prefix_match = ["mealie/files/"]
+    }
+
+    actions {
+      base_blob {
+        delete_after_days_since_modification_greater_than = 60
+      }
+    }
+  }
+}
+
 resource "azurerm_user_assigned_identity" "mealie_backup" {
   name                = "id-mealie-backup"
   location            = azurerm_resource_group.jellyhomelab.location
