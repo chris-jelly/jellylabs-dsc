@@ -14,3 +14,9 @@ variable "mealie_backup_service_account_name" {
   type        = string
   default     = "mealie-backup"
 }
+
+variable "mealie_cnpg_service_account_name" {
+  description = "Service account name used by the Mealie CloudNativePG workload in the homelab cluster."
+  type        = string
+  default     = "mealie-db-production-cnpg-v1"
+}

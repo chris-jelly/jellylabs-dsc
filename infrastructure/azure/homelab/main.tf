@@ -106,6 +106,14 @@ resource "azurerm_federated_identity_credential" "mealie_backup" {
   audience  = ["api://AzureADTokenExchange"]
 }
 
+resource "azurerm_federated_identity_credential" "mealie_cnpg" {
+  name      = "fic-mealie-cnpg"
+  parent_id = azurerm_user_assigned_identity.mealie_backup.id
+  issuer    = var.kubernetes_oidc_issuer_url
+  subject   = "system:serviceaccount:${var.mealie_backup_namespace}:${var.mealie_cnpg_service_account_name}"
+  audience  = ["api://AzureADTokenExchange"]
+}
+
 resource "azurerm_role_assignment" "mealie_backup_blob_contributor" {
   scope                = azurerm_storage_container.mealie.id
   role_definition_name = "Storage Blob Data Contributor"
