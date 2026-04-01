@@ -27,3 +27,6 @@ override.tf.json
 
 # opencode
 .opencode
+
+# pi
+.pi
