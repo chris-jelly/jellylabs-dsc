@@ -83,7 +83,7 @@ tofu init -backend=false
 tofu validate
 ```
 
-This mirrors the checks in `.github/workflows/infrastructure-validate.yml`.
+This mirrors the current pull request checks in `.github/workflows/infrastructure-validate.yml`. That workflow does not run on push events.
 
 ### Bootstrap Azure remote state
 
@@ -123,6 +123,7 @@ This repo uses OpenSpec to document infrastructure intent before or alongside im
 
 ## Notes
 
-- CI currently validates formatting and `tofu validate`; plan automation is documented but not fully wired for every stack yet.
+- CI currently runs on qualifying pull requests, not push events. It checks formatting, runs `tofu init -backend=false`, and runs `tofu validate` for the Azure and AWS roots.
+- Non-destructive plan automation is documented but not fully wired for every stack yet.
 - Secret values and long-lived cloud credentials are intentionally kept out of this repo.
 - The AWS side is intentionally minimal until a later foundation change expands it.

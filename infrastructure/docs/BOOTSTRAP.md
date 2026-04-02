@@ -23,19 +23,23 @@
 
 ## CI Authentication and Authorization
 
-### Azure
-- CI uses GitHub Actions OpenID Connect federation into a dedicated Entra application or managed identity path.
-- CI receives least-privilege roles scoped to the target subscription or resource group set.
-- Static client secrets are not stored in the repository.
+The current validation workflow does not yet authenticate to Azure or AWS. It only runs formatting and validation checks that do not require backend or cloud login.
 
-### AWS
-- CI assumes an IAM role through GitHub Actions OIDC.
-- The role trust policy restricts access to the repository, branch, and workflow context.
-- Long-lived AWS access keys are not used for routine plan or apply operations.
+### Intended Azure Model
+- Future CI plan or apply workflows should use GitHub Actions OpenID Connect federation into a dedicated Entra application or managed identity path.
+- CI should receive least-privilege roles scoped to the target subscription or resource group set.
+- Static client secrets should not be stored in the repository.
+
+### Intended AWS Model
+- Future CI plan or apply workflows should assume an IAM role through GitHub Actions OIDC.
+- The role trust policy should restrict access to the repository, branch, and workflow context.
+- Long-lived AWS access keys should not be used for routine plan or apply operations.
 
 ## CI Validation Expectations
 
-- Pull requests run `tofu fmt -check -recursive`, `tofu init`, `tofu validate`, and a non-destructive `tofu plan` for affected stacks.
+- The current GitHub Actions workflow runs on qualifying pull requests, not push events.
+- It runs `tofu fmt -check -recursive`, `tofu init -backend=false`, and `tofu validate` for the Azure and AWS roots.
+- Non-destructive `tofu plan` automation for affected stacks is intended, but it is not fully wired yet.
 - Apply is gated to protected branches plus environment approval.
 - Bootstrap stacks and workload stacks are applied separately to preserve state isolation.
 - Any apply workflow must use reviewed plans or equivalent branch protections rather than ad hoc local drift reconciliation.
