@@ -5,26 +5,34 @@ This stack manages Azure resources that support the homelab environment.
 ## Managed Here
 
 - `rg-jellyhomelab`
-- `rg-work-integrations`
-- Key Vault resources used for Kubernetes secret sync
+- `kv-jellyhomelabprod`
+- Key Vault workload identity resources used for Kubernetes secret sync
 - `sthomelabbackups`
-- `mealie` blob container inside `sthomelabbackups`
-- Mealie backup workload identity resources
+- `mealie` and `actualbudget` blob containers inside `sthomelabbackups`
+- Mealie and ActualBudget backup workload identity resources
 
 ## Out of Scope
 
-- Key Vault secret values
-- Consolidating resource groups
-- Consolidating Key Vaults
+- Managing Key Vault secret values in Terraform state
+- Kubernetes manifests, service-account annotations, and ExternalSecret definitions in the homelab repo
 - Importing `stactualbudgetbackups`
 
 ## Workload Identity Inputs
 
-This stack includes Azure workload identity resources for Mealie backups.
+This stack includes Azure workload identity resources for:
 
-- Set `kubernetes_oidc_issuer_url` in `homelab.auto.tfvars` so OpenTofu loads it automatically for every `tofu plan` and `tofu apply`.
-- `mealie_backup_namespace` defaults to `mealie`.
-- `mealie_backup_service_account_name` defaults to `mealie-backup`.
+- External Secrets Operator Key Vault reads
+- Mealie backups
+- ActualBudget backups
+
+Set `kubernetes_oidc_issuer_url` in `homelab.auto.tfvars` so OpenTofu loads it automatically for every `tofu plan` and `tofu apply`.
+
+Default service-account bindings:
+
+- ESO Key Vault reader: `system:serviceaccount:external-secrets:azure-kv-store-reader`
+- Mealie backup: `system:serviceaccount:mealie:mealie-backup`
+- Mealie CNPG: `system:serviceaccount:mealie:mealie-db-production-cnpg-v1`
+- ActualBudget backup: `system:serviceaccount:actualbudget:actualbudget-backup`
 
 Create `infrastructure/azure/homelab/homelab.auto.tfvars` with:
 
@@ -42,9 +50,41 @@ az connectedk8s show \
   -o tsv
 ```
 
-## Mealie Backup Layout
+## Handoff Outputs
+
+After `tofu apply`, hand these outputs to the homelab repo:
+
+### ESO Key Vault reader
+
+- `eso_keyvault_reader_uami_client_id`
+- `eso_keyvault_reader_uami_principal_id`
+- `eso_keyvault_reader_service_account_subject`
+
+### ActualBudget backup
+
+- `actualbudget_backup_uami_client_id`
+- `actualbudget_backup_uami_principal_id`
+- `actualbudget_backup_service_account_subject`
+- `actualbudget_backup_container_name`
+- `actualbudget_backup_container_resource_id`
+- `actualbudget_backup_destination_url`
+
+## Migration Notes
+
+- `app--salesforce-consumer-key--prod` and `app--salesforce-private-key--prod` now live in `kv-jellyhomelabprod`.
+- Homelab validation for workload identity cutover, Airflow secret rendering, and ActualBudget backup completed before legacy Azure cleanup.
+
+## Backup Layout
+
+### Mealie
 
 - Container: `mealie`
 - CNPG prefix: `db/`
 - File-backup prefix: `files/`
 - Azure lifecycle retention deletes blobs under `mealie/files/` after 60 days
+
+### ActualBudget
+
+- Container: `actualbudget`
+- Backups upload to the container root with the `actualbudget-backup-<timestamp>.tar.gz` naming convention from homelab
+- Destination URL output: `actualbudget_backup_destination_url`

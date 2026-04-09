@@ -26,9 +26,7 @@ This repository uses four adoption states for cloud resources.
 | Cloud | Resource Type | Resource | Status | Notes |
 | --- | --- | --- | --- | --- |
 | Azure | Resource group | `rg-jellyhomelab` | Authoritative | Existing homelab support group remains as-is during onboarding. |
-| Azure | Resource group | `rg-work-integrations` | Authoritative | Existing support group remains in scope without immediate consolidation. |
 | Azure | Key Vault | `homelab` Key Vault | Authoritative | Vault resource is managed; secret values remain out of scope. |
-| Azure | Key Vault | `work-integrations` Key Vault | Authoritative | Vault resource is managed; secret values remain out of scope. |
 | Azure | Storage account | `sthomelabbackups` | Authoritative | Shared homelab backup destination for multiple workloads. |
 
 ### Legacy Resources
