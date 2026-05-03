@@ -10,7 +10,7 @@
   - `azure/homelab/platform.tfstate`
 
 ### AWS
-- AWS state uses a dedicated S3 bucket plus a lock table if locking is enabled separately.
+- AWS state uses a dedicated S3 bucket plus a DynamoDB lock table.
 - Recommended naming pattern: `jellylabs-tofu-state-<account-id>-<region>`.
 - State files are isolated by cloud, environment, and stack path, for example:
   - `aws/bootstrap/global.tfstate`
@@ -32,14 +32,15 @@ The current validation workflow does not yet authenticate to Azure or AWS. It on
 
 ### Intended AWS Model
 - Future CI plan or apply workflows should assume an IAM role through GitHub Actions OIDC.
-- The role trust policy should restrict access to the repository, branch, and workflow context.
+- The role trust policy should restrict access to the repository and `main` branch.
 - Long-lived AWS access keys should not be used for routine plan or apply operations.
+- The bootstrap CI role should not mutate its own IAM role, policy, or OIDC provider; those remain local bootstrap responsibilities.
 
 ## CI Validation Expectations
 
-- The current GitHub Actions workflow runs on qualifying pull requests, not push events.
+- The shared infrastructure validation workflow runs on qualifying pull requests, not push events.
 - It runs `tofu fmt -check -recursive`, `tofu init -backend=false`, and `tofu validate` for the Azure and AWS roots.
 - Non-destructive `tofu plan` automation for affected stacks is intended, but it is not fully wired yet.
-- Apply is gated to protected branches plus environment approval.
 - Bootstrap stacks and workload stacks are applied separately to preserve state isolation.
-- Any apply workflow must use reviewed plans or equivalent branch protections rather than ad hoc local drift reconciliation.
+- AWS bootstrap applies are path-scoped to `infrastructure/aws/bootstrap/**` so other cloud folders can add separate deployment workflows.
+- AWS applies run automatically on `main` after branch protections and review happen before merge.

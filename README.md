@@ -83,7 +83,7 @@ tofu init -backend=false
 tofu validate
 ```
 
-This mirrors the current pull request checks in `.github/workflows/infrastructure-validate.yml`. That workflow does not run on push events.
+This mirrors the current pull request checks in `.github/workflows/infrastructure-validate.yml`. That shared validation workflow does not run on push events.
 
 ### Bootstrap Azure remote state
 
@@ -119,11 +119,13 @@ This repo uses OpenSpec to document infrastructure intent before or alongside im
 - `infrastructure/docs/ADOPTION.md` - ownership boundaries and adoption states
 - `infrastructure/docs/VERIFICATION.md` - first-wave scope and exclusions
 - `infrastructure/azure/bootstrap/README.md` - Azure remote state bootstrap workflow
+- `infrastructure/aws/bootstrap/README.md` - AWS remote state and OIDC bootstrap workflow
 - `infrastructure/azure/homelab/README.md` - Azure homelab import and workload identity details
 
 ## Notes
 
-- CI currently runs on qualifying pull requests, not push events. It checks formatting, runs `tofu init -backend=false`, and runs `tofu validate` for the Azure and AWS roots.
+- Shared CI validation currently runs on qualifying pull requests, not push events. It checks formatting, runs `tofu init -backend=false`, and runs `tofu validate` for the Azure and AWS roots.
+- The AWS bootstrap workflow runs offline validation on pull requests and automatic apply on `main` for `infrastructure/aws/bootstrap/**` changes.
 - Non-destructive plan automation is documented but not fully wired for every stack yet.
 - Secret values and long-lived cloud credentials are intentionally kept out of this repo.
 - The AWS side is intentionally minimal until a later foundation change expands it.

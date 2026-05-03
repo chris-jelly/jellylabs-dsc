@@ -21,6 +21,10 @@ override.tf.json
 # Local plan output
 *.tfplan
 
+# Local backend configuration generated from examples
+infrastructure/aws/bootstrap/backend.tf
+infrastructure/aws/bootstrap/backend.hcl
+
 # OpenTofu-specific state backup artifacts
 *.tofu.tfstate
 *.tofu.tfstate.*

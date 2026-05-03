@@ -6,7 +6,7 @@ This tree is intentionally minimal in the first wave.
 
 - Provider entry point
 - Region variable
-- Bootstrap placeholder path for future state and CI identity resources
+- Bootstrap path for AWS state and CI identity resources
 
 ## Excluded
 
