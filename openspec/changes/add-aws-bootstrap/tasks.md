@@ -27,5 +27,5 @@
 ## 5. Validation
 
 - [x] 5.1 Run OpenTofu formatting and validation for the bootstrap stack.
-- [ ] 5.2 Run an OpenTofu plan for the bootstrap stack and confirm only remote state, DynamoDB locking, OIDC, and AWS workflow resources are included.
+- [x] 5.2 Run an OpenTofu plan for the bootstrap stack and confirm only remote state, DynamoDB locking, OIDC, and AWS workflow resources are included.
 - [x] 5.3 Document the one-time local bootstrap apply and later AWS bootstrap path-scoped CI usage path.
