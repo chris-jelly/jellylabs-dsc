@@ -29,10 +29,4 @@ infrastructure/
 
 ## Adoption Status
 
-Resources are classified by adoption status:
-- **Authoritative**: Actively managed by this repository
-- **Deferred**: Planned for future management
-- **Legacy**: In use but deprecated, migration required
-- **Unmanaged**: Explicitly excluded from management
-
-See [ADOPTION.md](./docs/ADOPTION.md) for current resource classifications.
+Resource adoption and verification details live with the cloud or stack they describe.
