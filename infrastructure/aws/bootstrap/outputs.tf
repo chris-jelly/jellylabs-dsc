@@ -13,7 +13,3 @@ output "bootstrap_state_key" {
 output "lock_table" {
   value = aws_dynamodb_table.state_lock.name
 }
-
-output "role_arn" {
-  value = aws_iam_role.github_actions.arn
-}

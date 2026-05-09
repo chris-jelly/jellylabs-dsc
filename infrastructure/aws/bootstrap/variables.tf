@@ -21,15 +21,3 @@ variable "lock_table_name" {
   type        = string
   default     = "jellylabs-tofu-locks"
 }
-
-variable "github_actions_role_name" {
-  description = "IAM role name for GitHub Actions"
-  type        = string
-  default     = "jellylabs-tofu-bootstrap"
-}
-
-variable "github_oidc_thumbprints" {
-  description = "Thumbprints for the GitHub Actions OIDC provider"
-  type        = list(string)
-  default     = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
-}
