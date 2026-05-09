@@ -18,18 +18,18 @@ The AWS main deployment role SHALL constrain OIDC trust to the intended GitHub r
 - **WHEN** a workflow from another repository or non-main branch requests the main deployment role
 - **THEN** AWS denies the role assumption because the OIDC subject condition does not match
 
-### Requirement: AWS main deployment uses separate remote state
-The AWS main OpenTofu stack SHALL use the bootstrap-managed remote backend with a state key separate from the bootstrap stack.
+### Requirement: AWS workload deployments use separate remote state
+Each deployable AWS workload root SHALL use the bootstrap-managed remote backend with a root-specific state key separate from the bootstrap and identity stacks.
 
-#### Scenario: Main stack initializes remote state
-- **WHEN** the AWS main workflow runs `tofu init`
-- **THEN** it uses the bootstrap state bucket and lock table with a main-specific state key such as `aws/main/global.tfstate`
+#### Scenario: Workload root initializes remote state
+- **WHEN** the AWS workflow runs `tofu init` for a deployable workload root
+- **THEN** it uses the bootstrap state bucket and lock table with a root-specific state key such as `aws/<root-name>/global.tfstate`
 
-### Requirement: AWS main workflow uses the main deploy role
-The AWS main GitHub Actions workflow SHALL assume the main deployment role through a repository variable such as `AWS_MAIN_ROLE_ARN`.
+### Requirement: AWS workload workflow uses the main deploy role
+The AWS GitHub Actions workflow SHALL assume the main deployment role through a repository variable such as `AWS_MAIN_ROLE_ARN` when applying deployable workload roots.
 
-#### Scenario: Main apply uses main role ARN
-- **WHEN** the AWS main workflow runs on `main`
+#### Scenario: Workload apply uses main role ARN
+- **WHEN** the AWS workflow applies a deployable workload root on `main`
 - **THEN** it configures AWS credentials by assuming the main deployment role rather than a bootstrap deployment role
 
 ### Requirement: AWS main deploy role can manage guardrails and heartbeat resources

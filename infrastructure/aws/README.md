@@ -4,7 +4,7 @@ This tree contains AWS lab infrastructure managed with OpenTofu.
 
 ## Included
 
-- Main AWS lab stack at this root
+- Folder-based AWS workload roots under this directory
 - Bootstrap path for manually applied remote-state resources
 - Identity path for manually applied GitHub OIDC and AWS main deploy role resources
 
@@ -31,7 +31,26 @@ Keep `AWS_PROFILE=tofu-local` for local OpenTofu commands. If you need to refres
    - `AWS_MAIN_ROLE_ARN`: IAM role ARN from the identity `main_role_arn` output.
    - `AWS_STATE_BUCKET`: S3 bucket name from the bootstrap `state_bucket` output.
    - `AWS_STATE_LOCK_TABLE`: DynamoDB table name from the bootstrap `lock_table` output.
-4. Let GitHub Actions apply the main AWS stack on pushes to `main` using the `aws/main/global.tfstate` state key.
+4. Let GitHub Actions apply changed deployable workload roots on pushes to `main`.
+
+## Workload root convention
+
+Each direct child directory under `infrastructure/aws/` that contains OpenTofu files is treated as an AWS root. `bootstrap/` and `identity/` are manual roots: pull requests validate them, but GitHub Actions does not apply them.
+
+Deployable workload roots use one remote-state key per folder:
+
+```text
+infrastructure/aws/guardrails        -> aws/guardrails/global.tfstate
+infrastructure/aws/homelab-heartbeat -> aws/homelab-heartbeat/global.tfstate
+```
+
+To add a workload root:
+
+1. Create `infrastructure/aws/<root-name>/`.
+2. Add the root's `*.tf` files and, if useful for local work, `backend.tf.example` and `backend.hcl.example`.
+3. Use the shared bootstrap bucket and lock table for remote state.
+4. Open a pull request. CI validates changed AWS roots.
+5. Merge to `main`. CI applies only changed deployable roots; it skips `bootstrap/` and `identity/`.
 
 ## Excluded
 

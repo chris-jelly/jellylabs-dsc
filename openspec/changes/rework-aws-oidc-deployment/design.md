@@ -34,9 +34,9 @@ Alternatives considered:
 - **GitHub auto-apply for bootstrap:** Convenient, but self-referential IAM creates a bad choice: either the role cannot update itself, or it becomes too powerful.
 - **Delete bootstrap entirely:** Not appropriate because the remote-state backend and lock table still need an auditable OpenTofu definition.
 
-### Move GitHub OIDC to the AWS main deployment boundary
+### Move GitHub OIDC to the AWS workload deployment boundary
 
-The AWS main stack gets its own GitHub Actions deploy role. The workflow uses GitHub OIDC to assume that role on `main` and applies normal AWS lab infrastructure with a separate state key, such as `aws/main/global.tfstate`.
+AWS workload roots get a shared GitHub Actions deploy role. The workflow uses GitHub OIDC to assume that role on `main` and applies changed deployable roots under `infrastructure/aws/*`. Each deployable root uses its own state key, such as `aws/<root-name>/global.tfstate`.
 
 Alternatives considered:
 
@@ -50,11 +50,11 @@ The AWS main deploy role and OIDC trust should live in a dedicated identity root
 Alternatives considered:
 
 - **Keep the main deploy role in bootstrap:** Works, but bootstrap would still own CI identity and blur the new boundary.
-- **Keep the main deploy role in the main workload root:** Creates a self-management problem because the role used by GitHub would also manage its own permissions.
+- **Keep the main deploy role in a workload root:** Creates a self-management problem because the role used by GitHub would also manage its own permissions.
 
-### Apply AWS main automatically on `main`
+### Apply changed AWS workload roots automatically on `main`
 
-The AWS main workflow should apply automatically on pushes to `main` after PR validation succeeds and the main deploy role exists. This provides normal CD for lab resources while keeping bootstrap and identity changes manually controlled.
+The AWS workflow should detect changed deployable workload roots and apply only those roots automatically on pushes to `main` after PR validation succeeds and the main deploy role exists. This provides normal CD for lab resources while keeping bootstrap and identity changes manually controlled.
 
 Alternatives considered:
 
@@ -88,7 +88,7 @@ Alternatives considered:
 
 ### Update the pending guardrails and heartbeat change to depend on main OIDC
 
-The pending change currently says it uses the existing bootstrap OIDC foundation. It should instead target the AWS main stack and assume `AWS_MAIN_ROLE_ARN`. Its implementation tasks should include verifying that the main deploy role policy covers the required services before applying workload resources.
+The pending change currently says it uses the existing bootstrap OIDC foundation. It should instead target an AWS workload root folder and assume `AWS_MAIN_ROLE_ARN`. Its implementation tasks should include verifying that the main deploy role policy covers the required services before applying workload resources.
 
 Alternatives considered:
 
@@ -101,7 +101,7 @@ Alternatives considered:
 - **Main deploy role policy can sprawl** → Add permissions through reviewed OpenSpec changes and split roles when unrelated stacks appear.
 - **Constrained IAM can break applies** → Start with named lab role patterns and document how to expand permissions intentionally.
 - **Removing bootstrap OIDC may delete an existing role still referenced by GitHub variables** → Update or remove repository variables and workflow references during migration.
-- **State separation can be misconfigured** → Use explicit backend keys for bootstrap and main, and validate workflow `tofu init` arguments.
+- **State separation can be misconfigured** → Use deterministic backend keys per root and validate workflow `tofu init` arguments.
 
 ## Migration Plan
 
@@ -109,9 +109,9 @@ Alternatives considered:
 2. Create or update the AWS main deploy role and trust policy through the controlled local/admin path.
 3. Configure GitHub repository variables for the AWS main workflow, including `AWS_MAIN_ROLE_ARN`, state bucket, and lock table values.
 4. Replace the bootstrap auto-apply workflow with bootstrap validation and AWS main apply behavior.
-5. Update the pending guardrails and heartbeat change to use the AWS main stack and its deploy role.
-6. Run PR validation for bootstrap and main roots.
-7. Apply the AWS main stack from GitHub after the main role exists.
+5. Update the pending guardrails and heartbeat change to use an AWS workload root and the main deploy role.
+6. Run PR validation for bootstrap, identity, and representative workload roots.
+7. Apply a deployable AWS workload root from GitHub after the main role exists.
 
 Rollback: restore the previous bootstrap OIDC resources from git and apply locally with operator admin credentials, then restore the previous GitHub repository variables.
 

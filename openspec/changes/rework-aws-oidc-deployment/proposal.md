@@ -25,6 +25,6 @@ The AWS bootstrap stack is the root of trust and was already applied manually wi
 
 - Updates `infrastructure/aws/bootstrap` by removing OIDC/IAM deployment resources and related outputs/variables/docs.
 - Updates GitHub Actions workflows so bootstrap is validated but not auto-applied from GitHub OIDC.
-- Adds or updates the AWS main stack and workflow to assume a new main deploy role for normal lab resources.
+- Adds or updates AWS workload root CI so deployable roots assume a new main deploy role for normal lab resources.
 - Requires one manual bootstrap/admin apply to remove obsolete bootstrap OIDC resources and create or update the AWS main deploy role.
 - Requires the pending `add-aws-guardrails-and-homelab-heartbeat` change to target the AWS main deployment path and use the main deploy role permissions defined by this change.

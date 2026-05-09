@@ -26,7 +26,7 @@ The AWS lab needs low-cost account guardrails before adding workloads, and the h
 
 ## Impact
 
-- Adds AWS lab infrastructure managed by OpenTofu in the AWS main stack, using bootstrap remote state and the separate AWS main GitHub OIDC deployment role.
+- Adds AWS lab infrastructure managed by OpenTofu in a deployable AWS workload root, using bootstrap remote state and the separate AWS main GitHub OIDC deployment role.
 - Adds AWS resources for Budgets, SNS, DynamoDB, Lambda, EventBridge Scheduler or rules, identity-managed execution role references, and CloudWatch Logs.
 - Adds homelab GitOps resources in `~/git/homelab`, likely as an app-style Kubernetes CronJob with ExternalSecret-backed configuration.
 - Requires operator-provided contact endpoints for budget email, uptime email, and uptime SMS.

@@ -1,6 +1,6 @@
 ## 1. AWS Cost Guardrails
 
-- [ ] 1.1 Locate the AWS main OpenTofu stack and confirm it uses the bootstrap remote state key `aws/main/global.tfstate` and the AWS main OIDC deployment role.
+- [ ] 1.1 Create or locate the deployable AWS workload root and confirm it uses a root-specific bootstrap remote state key and the AWS main OIDC deployment role.
 - [ ] 1.2 Verify the AWS main deploy role includes the permissions needed for Budgets, SNS, DynamoDB, Lambda, EventBridge or Scheduler, CloudWatch Logs, and constrained pass-role access to identity-managed heartbeat execution roles.
 - [ ] 1.3 Add common AWS lab tags for lab, environment, ownership, and cost visibility.
 - [ ] 1.4 Create a $5 monthly AWS cost budget with native email subscribers.
@@ -14,7 +14,7 @@
 - [ ] 2.2 Add email and SMS subscriptions for the uptime SNS topic.
 - [ ] 2.3 Create the DynamoDB heartbeat registry table keyed by `service_id`.
 - [ ] 2.4 Define the initial `homelab-cluster` heartbeat source with enabled state and stale-threshold configuration.
-- [ ] 2.5 Use the identity-managed heartbeat receiver, checker, and scheduler execution roles instead of creating IAM roles in the AWS main stack.
+- [ ] 2.5 Use the identity-managed heartbeat receiver, checker, and scheduler execution roles instead of creating IAM roles in the workload root.
 - [ ] 2.6 Configure CloudWatch Logs retention for heartbeat receiver and checker functions.
 
 ## 3. Heartbeat Receiver
