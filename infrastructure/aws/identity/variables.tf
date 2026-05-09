@@ -1,0 +1,58 @@
+variable "aws_region" {
+  description = "AWS region for the main deployment identity and regional lab resources"
+  type        = string
+  default     = "ca-central-1"
+}
+
+variable "github_repository" {
+  description = "GitHub repository allowed to assume the AWS main deployment role"
+  type        = string
+  default     = "chris-jelly/jellylabs-dsc"
+}
+
+variable "github_branch" {
+  description = "GitHub branch allowed to assume the AWS main deployment role"
+  type        = string
+  default     = "main"
+}
+
+variable "github_oidc_thumbprints" {
+  description = "Thumbprints for the GitHub Actions OIDC provider"
+  type        = list(string)
+  default     = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
+}
+
+variable "main_role_name" {
+  description = "IAM role name for AWS main OpenTofu deployment from GitHub Actions"
+  type        = string
+  default     = "jellylabs-tofu-main"
+}
+
+variable "state_bucket_name" {
+  description = "Bootstrap-managed S3 bucket used by AWS main OpenTofu state"
+  type        = string
+}
+
+variable "state_lock_table_name" {
+  description = "Bootstrap-managed DynamoDB table used for OpenTofu state locking"
+  type        = string
+  default     = "jellylabs-tofu-locks"
+}
+
+variable "main_state_key" {
+  description = "S3 object key used by the AWS main OpenTofu state"
+  type        = string
+  default     = "aws/main/global.tfstate"
+}
+
+variable "lab_resource_prefix" {
+  description = "Name prefix for AWS lab resources managed by the main deployment role"
+  type        = string
+  default     = "jellylabs-"
+}
+
+variable "lab_role_prefix" {
+  description = "IAM role and policy prefix for lab execution roles managed by the main deployment role"
+  type        = string
+  default     = "jellylabs-lab-"
+}

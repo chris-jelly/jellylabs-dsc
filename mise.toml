@@ -2,3 +2,22 @@
 aws = { version = "latest", symlink_bins = "true" }
 azure-cli = { version = "latest", uvx_args = "--prerelease=allow" }
 opentofu = "latest"
+
+[env]
+# OpenTofu 1.11 does not consume credentials from `aws login` directly for the
+# S3 backend. Use the local `tofu-local` profile, which is configured by the
+# `aws-tofu-login` mise task as a credential_process bridge to the AWS CLI login
+# cache. Keep this out of backend/provider config so CI can continue using OIDC.
+AWS_PROFILE = "tofu-local"
+AWS_LOGIN_PROFILE = "tofu-login"
+AWS_REGION = "ca-central-1"
+AWS_DEFAULT_REGION = "ca-central-1"
+
+[tasks.aws-tofu-login]
+description = "Login to AWS and configure the local OpenTofu credential bridge"
+run = """
+aws login --profile "$AWS_LOGIN_PROFILE"
+aws configure set profile."$AWS_PROFILE".credential_process "aws configure export-credentials --profile $AWS_LOGIN_PROFILE --format process"
+aws configure set profile."$AWS_PROFILE".region "$AWS_REGION"
+aws sts get-caller-identity --profile "$AWS_PROFILE"
+"""

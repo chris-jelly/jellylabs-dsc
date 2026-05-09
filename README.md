@@ -15,10 +15,8 @@ The first wave of adoption is intentionally narrow:
 
 - Azure homelab support resources are being brought under management.
 - Azure remote state bootstrap resources are documented and partially implemented.
-- AWS is present as a minimal foundation entry point, not a full platform build-out.
-- Existing resources are classified as authoritative, legacy, deferred, or unmanaged before they enter long-term management.
-
-See `infrastructure/docs/ADOPTION.md` for the current ownership boundary.
+- AWS bootstrap state and CI identity resources are defined separately from later lab workloads.
+- Resource adoption notes live with the cloud or stack they describe.
 
 ## Repository layout
 
@@ -27,7 +25,7 @@ See `infrastructure/docs/ADOPTION.md` for the current ownership boundary.
 ├── infrastructure/
 │   ├── aws/                     # AWS foundation entry point and future environments
 │   ├── azure/                   # Azure foundation, bootstrap, and homelab stacks
-│   ├── docs/                    # Adoption, bootstrap, and verification docs
+│   ├── docs/                    # Shared bootstrap and CI conventions
 │   └── README.md                # Infrastructure-specific overview
 ├── openspec/                    # Approved specs and in-flight change proposals
 ├── .github/workflows/           # CI validation workflows
@@ -83,7 +81,7 @@ tofu init -backend=false
 tofu validate
 ```
 
-This mirrors the current pull request checks in `.github/workflows/infrastructure-validate.yml`. That workflow does not run on push events.
+This mirrors the current pull request checks in `.github/workflows/infrastructure-validate.yml`. That shared validation workflow does not run on push events.
 
 ### Bootstrap Azure remote state
 
@@ -116,14 +114,14 @@ This repo uses OpenSpec to document infrastructure intent before or alongside im
 
 - `infrastructure/README.md` - infrastructure tree overview
 - `infrastructure/docs/BOOTSTRAP.md` - backend, OIDC, and CI conventions
-- `infrastructure/docs/ADOPTION.md` - ownership boundaries and adoption states
-- `infrastructure/docs/VERIFICATION.md` - first-wave scope and exclusions
 - `infrastructure/azure/bootstrap/README.md` - Azure remote state bootstrap workflow
+- `infrastructure/aws/bootstrap/README.md` - AWS remote state and OIDC bootstrap workflow
 - `infrastructure/azure/homelab/README.md` - Azure homelab import and workload identity details
 
 ## Notes
 
-- CI currently runs on qualifying pull requests, not push events. It checks formatting, runs `tofu init -backend=false`, and runs `tofu validate` for the Azure and AWS roots.
+- Shared CI validation currently runs on qualifying pull requests, not push events. It checks formatting, runs `tofu init -backend=false`, and runs `tofu validate` for the Azure and AWS roots.
+- The AWS bootstrap workflow runs offline validation on pull requests and automatic apply on `main` for `infrastructure/aws/bootstrap/**` changes.
 - Non-destructive plan automation is documented but not fully wired for every stack yet.
 - Secret values and long-lived cloud credentials are intentionally kept out of this repo.
 - The AWS side is intentionally minimal until a later foundation change expands it.
