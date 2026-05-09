@@ -17,8 +17,10 @@ data "aws_caller_identity" "current" {}
 data "aws_partition" "current" {}
 
 locals {
-  github_subject   = "repo:${var.github_repository}:ref:refs/heads/${var.github_branch}"
-  state_bucket_arn = "arn:${data.aws_partition.current.partition}:s3:::${var.state_bucket_name}"
+  github_subject             = "repo:${var.github_repository}:ref:refs/heads/${var.github_branch}"
+  state_bucket_arn           = "arn:${data.aws_partition.current.partition}:s3:::${var.state_bucket_name}"
+  workload_state_key_glob    = "${var.workload_state_key_prefix}/*/global.tfstate"
+  workload_state_prefix_glob = "${var.workload_state_key_prefix}/*"
 }
 
 resource "aws_iam_openid_connect_provider" "github" {
@@ -183,8 +185,8 @@ data "aws_iam_policy_document" "main" {
       test     = "StringLike"
       variable = "s3:prefix"
       values = [
-        var.main_state_key,
-        "${dirname(var.main_state_key)}/*",
+        local.workload_state_key_glob,
+        local.workload_state_prefix_glob,
       ]
     }
   }
@@ -196,7 +198,7 @@ data "aws_iam_policy_document" "main" {
       "s3:PutObject",
       "s3:DeleteObject",
     ]
-    resources = ["${local.state_bucket_arn}/${var.main_state_key}"]
+    resources = ["${local.state_bucket_arn}/${local.workload_state_key_glob}"]
   }
 
   statement {

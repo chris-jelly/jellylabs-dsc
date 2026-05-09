@@ -9,10 +9,13 @@
 
 - [x] 2.1 Remove automatic bootstrap `tofu apply` on push to `main` from the AWS infrastructure workflow.
 - [x] 2.2 Keep or add bootstrap PR validation for `tofu fmt`, `tofu init -backend=false`, and `tofu validate`.
-- [x] 2.3 Add or update the AWS main workflow to run PR validation for the AWS main stack.
-- [x] 2.4 Add AWS main apply behavior on `main` that assumes `${{ vars.AWS_MAIN_ROLE_ARN }}` through GitHub OIDC.
-- [x] 2.5 Configure AWS main `tofu init` to use the bootstrap state bucket, lock table, and a main-specific state key such as `aws/main/global.tfstate`.
-- [x] 2.6 Restrict AWS main push applies to deployable root stack and workflow changes.
+- [x] 2.3 Define the AWS workload root convention: folder-based deployable roots under `infrastructure/aws/*`, excluding manually controlled roots such as `bootstrap/` and `identity/`.
+- [x] 2.4 Add changed-root detection for AWS pull requests so CI validates only affected AWS roots plus any required always-validate roots.
+- [x] 2.5 Add changed-root detection for pushes to `main` so CI applies only affected deployable AWS workload roots.
+- [x] 2.6 Configure the workflow to exclude manual roots (`bootstrap/`, `identity/`) from automatic applies while still validating them on pull requests.
+- [x] 2.7 Configure per-root backend initialization using a deterministic state key convention such as `aws/<root-name>/global.tfstate`.
+- [x] 2.8 Ensure workflow-only changes run safe validation and do not blindly apply every AWS workload root unless explicitly intended.
+- [x] 2.9 Document how a new AWS workload folder opts into CI validation and apply behavior.
 
 ## 3. AWS Main Deployment Identity
 
@@ -27,12 +30,13 @@
 - [x] 3.9 Add CloudWatch Logs permissions required for Lambda log groups and retention.
 - [x] 3.10 Add manually managed heartbeat execution roles and constrained `iam:PassRole` permissions for Lambda, EventBridge, and Scheduler.
 - [x] 3.11 Split S3 state bucket location and prefix-scoped list permissions so backend initialization can read the bucket location.
+- [x] 3.12 Permit the AWS main deployment role to access per-root workload state keys such as `aws/<root-name>/global.tfstate`.
 
 ## 4. Pending Guardrails and Heartbeat Change Alignment
 
 - [x] 4.1 Update `add-aws-guardrails-and-homelab-heartbeat` proposal and design text to depend on AWS main OIDC rather than bootstrap OIDC.
 - [x] 4.2 Update guardrails and heartbeat tasks to verify the AWS main deploy role permissions before applying workload resources.
-- [x] 4.3 Ensure guardrails and heartbeat resources target the AWS main stack and main remote-state key.
+- [x] 4.3 Update guardrails and heartbeat resources to target an AWS workload root folder and its own remote-state key instead of the parent `infrastructure/aws` directory.
 - [x] 4.4 Record any additional service permissions discovered during implementation as reviewed main deploy role expansions.
 
 ## 5. Migration and Repository Configuration
@@ -45,7 +49,7 @@
 ## 6. Validation
 
 - [x] 6.1 Run OpenTofu formatting and validation for the bootstrap root.
-- [x] 6.2 Run OpenTofu formatting and validation for the AWS main root.
+- [x] 6.2 Run OpenTofu formatting and validation for representative changed AWS workload roots through the new folder-based CI path.
 - [x] 6.3 Run a bootstrap plan with operator credentials and confirm only intended OIDC/IAM cleanup and retained state resources are present.
-- [ ] 6.4 Run an AWS main plan through GitHub OIDC after the main role exists.
+- [x] 6.4 Run an AWS workload root plan or apply through GitHub OIDC after the main role exists.
 - [x] 6.5 Run OpenSpec validation for `rework-aws-oidc-deployment`.

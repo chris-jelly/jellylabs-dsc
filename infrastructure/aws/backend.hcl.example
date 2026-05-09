@@ -1,5 +1,0 @@
-bucket         = "jellylabs-tofu-state-123456789012-ca-central-1"
-key            = "aws/main/global.tfstate"
-region         = "ca-central-1"
-dynamodb_table = "jellylabs-tofu-locks"
-encrypt        = true

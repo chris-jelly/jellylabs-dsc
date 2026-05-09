@@ -1,6 +1,6 @@
 ## Context
 
-The AWS bootstrap foundation is intentionally limited to manually applied remote state. A separate AWS main GitHub OIDC deployment role applies normal AWS lab resources. This change is the next AWS lab layer in the main stack: first add low-dollar account safety, then add a practical internal-liveness heartbeat for the homelab.
+The AWS bootstrap foundation is intentionally limited to manually applied remote state. A separate AWS main GitHub OIDC deployment role applies normal AWS lab workload roots. This change is the next AWS lab layer in a deployable workload root: first add low-dollar account safety, then add a practical internal-liveness heartbeat for the homelab.
 
 The homelab is deployed through Flux in `~/git/homelab` and already uses Kubernetes app manifests, CronJobs, External Secrets, and GitOps layering. The heartbeat sender should fit that model instead of introducing a long-running service.
 
@@ -104,8 +104,8 @@ Alternatives considered:
 
 1. Apply or verify the AWS bootstrap foundation so remote state is available.
 2. Apply or verify the AWS identity root so the AWS main GitHub OIDC deployment role has the permissions required by this change.
-3. Deploy AWS cost guardrails in the AWS main stack: budget, notification subscribers, and tagging conventions.
-4. Deploy uptime alerting infrastructure in the AWS main stack: SNS topic/subscriptions, DynamoDB table, receiver, checker, schedules, identity-managed execution role references, and logs.
+3. Deploy AWS cost guardrails in a deployable AWS workload root: budget, notification subscribers, and tagging conventions.
+4. Deploy uptime alerting infrastructure in the same deployable AWS workload root: SNS topic/subscriptions, DynamoDB table, receiver, checker, schedules, identity-managed execution role references, and logs.
 5. Confirm email and SMS subscriptions where AWS requires manual confirmation or verification.
 6. Add the homelab CronJob and required ExternalSecret-backed configuration.
 7. Test by sending a heartbeat, then pausing or disabling the CronJob long enough to trigger stale detection.
