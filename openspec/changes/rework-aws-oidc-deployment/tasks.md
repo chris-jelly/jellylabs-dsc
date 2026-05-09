@@ -30,6 +30,7 @@
 - [x] 3.9 Add CloudWatch Logs permissions required for Lambda log groups and retention.
 - [x] 3.10 Add manually managed heartbeat execution roles and constrained `iam:PassRole` permissions for Lambda, EventBridge, and Scheduler.
 - [x] 3.11 Split S3 state bucket location and prefix-scoped list permissions so backend initialization can read the bucket location.
+- [x] 3.12 Permit the AWS main deployment role to access per-root workload state keys such as `aws/<root-name>/global.tfstate`.
 
 ## 4. Pending Guardrails and Heartbeat Change Alignment
 

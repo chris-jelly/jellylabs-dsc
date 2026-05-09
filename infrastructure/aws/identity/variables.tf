@@ -29,7 +29,7 @@ variable "main_role_name" {
 }
 
 variable "state_bucket_name" {
-  description = "Bootstrap-managed S3 bucket used by AWS main OpenTofu state"
+  description = "Bootstrap-managed S3 bucket used by AWS workload OpenTofu state"
   type        = string
 }
 
@@ -39,10 +39,10 @@ variable "state_lock_table_name" {
   default     = "jellylabs-tofu-locks"
 }
 
-variable "main_state_key" {
-  description = "S3 object key used by the AWS main OpenTofu state"
+variable "workload_state_key_prefix" {
+  description = "S3 key prefix used by deployable AWS workload root OpenTofu states"
   type        = string
-  default     = "aws/main/global.tfstate"
+  default     = "aws"
 }
 
 variable "lab_resource_prefix" {
