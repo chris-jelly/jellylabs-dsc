@@ -18,6 +18,7 @@ data "aws_partition" "current" {}
 
 locals {
   github_subject             = "repo:${var.github_repository}:ref:refs/heads/${var.github_branch}"
+  github_pr_subject          = "repo:${var.github_repository}:pull_request"
   state_bucket_arn           = "arn:${data.aws_partition.current.partition}:s3:::${var.state_bucket_name}"
   workload_state_key_glob    = "${var.workload_state_key_prefix}/*/global.tfstate"
   workload_state_prefix_glob = "${var.workload_state_key_prefix}/*"
@@ -56,6 +57,34 @@ data "aws_iam_policy_document" "main_assume_role" {
 resource "aws_iam_role" "main" {
   name               = var.main_role_name
   assume_role_policy = data.aws_iam_policy_document.main_assume_role.json
+}
+
+data "aws_iam_policy_document" "plan_assume_role" {
+  statement {
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+
+    principals {
+      type        = "Federated"
+      identifiers = [aws_iam_openid_connect_provider.github.arn]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:sub"
+      values   = [local.github_pr_subject]
+    }
+  }
+}
+
+resource "aws_iam_role" "plan" {
+  name               = var.plan_role_name
+  assume_role_policy = data.aws_iam_policy_document.plan_assume_role.json
 }
 
 data "aws_iam_policy_document" "lambda_assume_role" {
@@ -387,4 +416,137 @@ resource "aws_iam_role_policy" "main" {
   name   = "${var.main_role_name}-policy"
   role   = aws_iam_role.main.id
   policy = data.aws_iam_policy_document.main.json
+}
+
+data "aws_iam_policy_document" "plan" {
+  statement {
+    sid       = "PlanStateBucketLocation"
+    actions   = ["s3:GetBucketLocation"]
+    resources = [local.state_bucket_arn]
+  }
+
+  statement {
+    sid       = "PlanStateBucketList"
+    actions   = ["s3:ListBucket"]
+    resources = [local.state_bucket_arn]
+
+    condition {
+      test     = "StringLike"
+      variable = "s3:prefix"
+      values = [
+        local.workload_state_key_glob,
+        local.workload_state_prefix_glob,
+      ]
+    }
+  }
+
+  statement {
+    sid       = "PlanStateObjectsRead"
+    actions   = ["s3:GetObject"]
+    resources = ["${local.state_bucket_arn}/${local.workload_state_key_glob}"]
+  }
+
+  statement {
+    sid = "PlanStateLockTable"
+    actions = [
+      "dynamodb:DescribeTable",
+      "dynamodb:GetItem",
+      "dynamodb:PutItem",
+      "dynamodb:DeleteItem",
+      "dynamodb:UpdateItem",
+    ]
+    resources = ["arn:${data.aws_partition.current.partition}:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.state_lock_table_name}"]
+  }
+
+  statement {
+    sid = "PlanBudgetsRead"
+    actions = [
+      "budgets:DescribeBudget",
+      "budgets:DescribeBudgets",
+      "budgets:DescribeNotificationsForBudget",
+      "budgets:DescribeSubscribersForNotification",
+      "budgets:ViewBudget",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "PlanSnsRead"
+    actions = [
+      "sns:GetSubscriptionAttributes",
+      "sns:GetTopicAttributes",
+      "sns:ListSubscriptionsByTopic",
+      "sns:ListTagsForResource",
+    ]
+    resources = ["arn:${data.aws_partition.current.partition}:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${var.lab_resource_prefix}*"]
+  }
+
+  statement {
+    sid = "PlanDynamoDbRead"
+    actions = [
+      "dynamodb:DescribeContinuousBackups",
+      "dynamodb:DescribeTable",
+      "dynamodb:DescribeTimeToLive",
+      "dynamodb:GetItem",
+      "dynamodb:ListTagsOfResource",
+      "dynamodb:Scan",
+    ]
+    resources = ["arn:${data.aws_partition.current.partition}:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.lab_resource_prefix}*"]
+  }
+
+  statement {
+    sid = "PlanLambdaRead"
+    actions = [
+      "lambda:GetFunction",
+      "lambda:GetFunctionCodeSigningConfig",
+      "lambda:GetFunctionUrlConfig",
+      "lambda:GetPolicy",
+      "lambda:ListVersionsByFunction",
+    ]
+    resources = ["arn:${data.aws_partition.current.partition}:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.lab_resource_prefix}*"]
+  }
+
+  statement {
+    sid = "PlanEventBridgeRead"
+    actions = [
+      "events:DescribeRule",
+      "events:ListTagsForResource",
+      "events:ListTargetsByRule",
+    ]
+    resources = ["arn:${data.aws_partition.current.partition}:events:${var.aws_region}:${data.aws_caller_identity.current.account_id}:rule/${var.lab_resource_prefix}*"]
+  }
+
+  statement {
+    sid = "PlanSchedulerRead"
+    actions = [
+      "scheduler:GetSchedule",
+      "scheduler:ListTagsForResource",
+    ]
+    resources = ["arn:${data.aws_partition.current.partition}:scheduler:${var.aws_region}:${data.aws_caller_identity.current.account_id}:schedule/default/${var.lab_resource_prefix}*"]
+  }
+
+  statement {
+    sid = "PlanCloudWatchLogsRead"
+    actions = [
+      "logs:DescribeLogGroups",
+      "logs:ListTagsForResource",
+    ]
+    resources = ["arn:${data.aws_partition.current.partition}:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.lab_resource_prefix}*"]
+  }
+
+  statement {
+    sid     = "PlanReadLabExecutionRoles"
+    actions = ["iam:GetRole"]
+    resources = [
+      aws_iam_role.heartbeat_receiver.arn,
+      aws_iam_role.heartbeat_checker.arn,
+      aws_iam_role.heartbeat_scheduler.arn,
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "plan" {
+  name   = "${var.plan_role_name}-policy"
+  role   = aws_iam_role.plan.id
+  policy = data.aws_iam_policy_document.plan.json
 }

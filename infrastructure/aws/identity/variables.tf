@@ -28,6 +28,12 @@ variable "main_role_name" {
   default     = "jellylabs-tofu-main"
 }
 
+variable "plan_role_name" {
+  description = "IAM role name for AWS OpenTofu pull request planning from GitHub Actions"
+  type        = string
+  default     = "jellylabs-tofu-plan"
+}
+
 variable "state_bucket_name" {
   description = "Bootstrap-managed S3 bucket used by AWS workload OpenTofu state"
   type        = string

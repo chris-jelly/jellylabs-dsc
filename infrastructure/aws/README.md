@@ -29,9 +29,11 @@ Keep `AWS_PROFILE=tofu-local` for local OpenTofu commands. If you need to refres
 2. Apply `identity/` manually with operator admin credentials to create the GitHub OIDC provider and `jellylabs-tofu-main` role.
 3. Store these GitHub repository variables:
    - `AWS_MAIN_ROLE_ARN`: IAM role ARN from the identity `main_role_arn` output.
+   - `AWS_PLAN_ROLE_ARN`: IAM role ARN from the identity `plan_role_arn` output.
    - `AWS_STATE_BUCKET`: S3 bucket name from the bootstrap `state_bucket` output.
    - `AWS_STATE_LOCK_TABLE`: DynamoDB table name from the bootstrap `lock_table` output.
-4. Let GitHub Actions apply changed deployable workload roots on pushes to `main`.
+4. Configure the `aws-production` GitHub Environment for apply jobs. Restrict deployments to `main` and add required reviewers if production applies should wait for approval.
+5. Let GitHub Actions plan changed deployable workload roots on pull requests and apply changed deployable workload roots on pushes to `main`.
 
 ## Workload root convention
 
@@ -50,7 +52,12 @@ To add a workload root:
 2. Add the root's `*.tf` files and, if useful for local work, `backend.tf.example` and `backend.hcl.example`.
 3. Use the shared bootstrap bucket and lock table for remote state.
 4. Open a pull request. CI validates changed AWS roots.
-5. Merge to `main`. CI applies only changed deployable roots; it skips `bootstrap/` and `identity/`.
+5. Review the PR plan comment for deployable workload roots.
+6. Merge to `main`. CI applies only changed deployable roots through the `aws-production` environment; it skips `bootstrap/` and `identity/`.
+
+Shared modules under `infrastructure/aws/modules/` are not deployable roots. Changes there validate and plan every deployable workload root on pull requests, and apply every deployable workload root on `main`.
+
+Manual roots remain outside workload CI planning and apply. If `bootstrap/` or `identity/` plan visibility is needed later, add a separate plan-only workflow with its own credentials and approval model.
 
 ## Excluded
 
