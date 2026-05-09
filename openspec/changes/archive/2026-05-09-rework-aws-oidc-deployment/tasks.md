@@ -49,7 +49,7 @@
 ## 6. Validation
 
 - [x] 6.1 Run OpenTofu formatting and validation for the bootstrap root.
-- [ ] 6.2 Run OpenTofu formatting and validation for representative changed AWS workload roots through the new folder-based CI path.
+- [x] 6.2 Run OpenTofu formatting and validation for representative changed AWS workload roots through the new folder-based CI path.
 - [x] 6.3 Run a bootstrap plan with operator credentials and confirm only intended OIDC/IAM cleanup and retained state resources are present.
-- [ ] 6.4 Run an AWS workload root plan or apply through GitHub OIDC after the main role exists.
+- [x] 6.4 Run an AWS workload root plan or apply through GitHub OIDC after the main role exists.
 - [x] 6.5 Run OpenSpec validation for `rework-aws-oidc-deployment`.
