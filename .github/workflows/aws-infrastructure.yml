@@ -12,9 +12,8 @@ on:
     branches:
       - main
     paths:
-      - "infrastructure/aws/**"
-      - "!infrastructure/aws/bootstrap/**"
-      - "!infrastructure/aws/identity/**"
+      - "infrastructure/aws/*.tf"
+      - ".github/workflows/aws-infrastructure.yml"
 
 jobs:
   validate-bootstrap:

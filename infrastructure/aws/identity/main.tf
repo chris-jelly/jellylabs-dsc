@@ -169,11 +169,14 @@ resource "aws_iam_role_policy" "heartbeat_scheduler" {
 
 data "aws_iam_policy_document" "main" {
   statement {
-    sid = "MainStateBucketList"
-    actions = [
-      "s3:GetBucketLocation",
-      "s3:ListBucket",
-    ]
+    sid       = "MainStateBucketLocation"
+    actions   = ["s3:GetBucketLocation"]
+    resources = [local.state_bucket_arn]
+  }
+
+  statement {
+    sid       = "MainStateBucketList"
+    actions   = ["s3:ListBucket"]
     resources = [local.state_bucket_arn]
 
     condition {

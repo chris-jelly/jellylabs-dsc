@@ -12,6 +12,7 @@
 - [x] 2.3 Add or update the AWS main workflow to run PR validation for the AWS main stack.
 - [x] 2.4 Add AWS main apply behavior on `main` that assumes `${{ vars.AWS_MAIN_ROLE_ARN }}` through GitHub OIDC.
 - [x] 2.5 Configure AWS main `tofu init` to use the bootstrap state bucket, lock table, and a main-specific state key such as `aws/main/global.tfstate`.
+- [x] 2.6 Restrict AWS main push applies to deployable root stack and workflow changes.
 
 ## 3. AWS Main Deployment Identity
 
@@ -25,6 +26,7 @@
 - [x] 3.8 Add EventBridge rules or Scheduler permissions required for scheduled checker invocation and targets.
 - [x] 3.9 Add CloudWatch Logs permissions required for Lambda log groups and retention.
 - [x] 3.10 Add manually managed heartbeat execution roles and constrained `iam:PassRole` permissions for Lambda, EventBridge, and Scheduler.
+- [x] 3.11 Split S3 state bucket location and prefix-scoped list permissions so backend initialization can read the bucket location.
 
 ## 4. Pending Guardrails and Heartbeat Change Alignment
 
