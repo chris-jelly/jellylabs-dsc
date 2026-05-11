@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GitHub Actions OIDC and AWS plan-role trust</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f7f8fb;
+        --card: #ffffff;
+        --text: #1d2433;
+        --muted: #5d6678;
+        --line: #d9deea;
+        --accent: #2463eb;
+        --accent-soft: #e8efff;
+        --warn: #a15c00;
+        --warn-soft: #fff3d8;
+        --ok: #067647;
+        --ok-soft: #dcfae6;
+        --code: #111827;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #10141f;
+          --card: #171d2b;
+          --text: #eef2ff;
+          --muted: #a9b2c7;
+          --line: #2c3447;
+          --accent: #8fb3ff;
+          --accent-soft: #1d2a47;
+          --warn: #ffcf70;
+          --warn-soft: #3a2a10;
+          --ok: #8ee6b7;
+          --ok-soft: #123323;
+          --code: #e5e7eb;
+        }
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 16px/1.55 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      main {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 48px 20px 64px;
+      }
+
+      h1, h2, h3 { line-height: 1.15; }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2rem, 5vw, 3.6rem);
+        letter-spacing: -0.04em;
+      }
+
+      h2 {
+        margin: 0 0 16px;
+        font-size: 1.55rem;
+      }
+
+      h3 {
+        margin: 0 0 8px;
+        font-size: 1rem;
+      }
+
+      p { margin: 0 0 16px; }
+
+      code, pre {
+        color: var(--code);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      code { font-size: 0.92em; }
+
+      pre {
+        overflow-x: auto;
+        margin: 12px 0 0;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: color-mix(in srgb, var(--card) 88%, var(--bg));
+        font-size: 0.9rem;
+      }
+
+      .lede {
+        max-width: 780px;
+        margin-bottom: 28px;
+        color: var(--muted);
+        font-size: 1.15rem;
+      }
+
+      .card {
+        margin: 20px 0;
+        padding: 24px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--card);
+        box-shadow: 0 8px 28px rgb(15 23 42 / 8%);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 14px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-weight: 700;
+        font-size: 0.8rem;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+      }
+
+      .callout {
+        margin: 18px 0 0;
+        padding: 16px;
+        border-radius: 14px;
+      }
+
+      .callout.warn {
+        background: var(--warn-soft);
+        color: var(--warn);
+      }
+
+      .callout.ok {
+        background: var(--ok-soft);
+        color: var(--ok);
+      }
+
+      .flow {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(130px, 1fr));
+        align-items: stretch;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .step {
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: color-mix(in srgb, var(--card) 92%, var(--accent-soft));
+        text-align: center;
+        font-weight: 700;
+      }
+
+      .step small {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        font-weight: 500;
+      }
+
+      .compare {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .compare th, .compare td {
+        padding: 12px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .compare th {
+        color: var(--muted);
+        font-size: 0.82rem;
+        text-transform: uppercase;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 1.2rem;
+      }
+
+      li + li { margin-top: 8px; }
+
+      @media (max-width: 780px) {
+        .flow { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="pill">AWS infrastructure CI</p>
+      <h1>GitHub Actions OIDC, reusable workflows, and the AWS plan role</h1>
+      <p class="lede">
+        This page explains why the PR plan role needs a narrow trust policy, what reusable workflows add,
+        and how this applies to <code>.github/workflows/aws-infrastructure.yml</code>.
+      </p>
+
+      <section class="card">
+        <h2>The short version</h2>
+        <p>
+          GitHub Actions uses OIDC to ask AWS for temporary credentials. AWS decides whether to issue those
+          credentials by checking claims in the GitHub-issued token. Our plan role currently trusts pull request
+          jobs from this repository. That is useful, but broad: any future PR workflow with <code>id-token: write</code>
+          could try to assume the same role.
+        </p>
+        <div class="callout ok">
+          Recommended for this PR: add more trust-policy conditions, such as <code>repository</code> and
+          <code>workflow</code>, so the plan role is limited to the AWS infrastructure workflow.
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>How OIDC works in this repo</h2>
+        <div class="flow" aria-label="OIDC flow">
+          <div class="step">Pull request<small>changes AWS workload code</small></div>
+          <div class="step">GitHub job<small>has <code>id-token: write</code></small></div>
+          <div class="step">OIDC token<small>contains claims</small></div>
+          <div class="step">AWS trust policy<small>checks claims</small></div>
+          <div class="step">Plan role<small>runs <code>tofu plan</code></small></div>
+        </div>
+        <p style="margin-top: 18px;">
+          The token includes facts such as the repository, event type, workflow name, branch or pull request
+          context, and audience. AWS role trust policies compare those facts before allowing
+          <code>sts:AssumeRoleWithWebIdentity</code>.
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>The risk in the current plan-role trust</h2>
+        <p>The plan role was intentionally separated from the apply role:</p>
+        <pre><code>Pull request workflow  → jellylabs-tofu-plan → tofu plan
+Push to main           → jellylabs-tofu-main → tofu apply</code></pre>
+        <p style="margin-top: 16px;">The weak point is this trust condition:</p>
+        <pre><code>token.actions.githubusercontent.com:sub = repo:chris-jelly/jellylabs-dsc:pull_request</code></pre>
+        <p style="margin-top: 16px;">
+          That means “a pull request workflow in this repo.” It does not mean “the AWS infrastructure workflow.”
+          If another PR workflow later gets <code>id-token: write</code>, AWS may let that job assume the plan role too.
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>Normal workflows versus reusable workflows</h2>
+        <table class="compare">
+          <thead>
+            <tr>
+              <th>Concept</th>
+              <th>What it means</th>
+              <th>Why it matters for OIDC</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Normal workflow</strong></td>
+              <td>A workflow file triggered directly by events like <code>pull_request</code> or <code>push</code>.</td>
+              <td>Good for this repo today. AWS can check claims like <code>repository</code>, <code>sub</code>, and <code>workflow</code>.</td>
+            </tr>
+            <tr>
+              <td><strong>Reusable workflow</strong></td>
+              <td>A workflow called by another workflow with <code>jobs.&lt;id&gt;.uses</code>.</td>
+              <td>Enables stronger “approved workflow” patterns through <code>job_workflow_ref</code>.</td>
+            </tr>
+            <tr>
+              <td><strong><code>id-token: write</code></strong></td>
+              <td>A workflow permission that lets a job request a GitHub OIDC token.</td>
+              <td>It does not grant AWS access by itself. AWS still decides based on the role trust policy.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="card">
+        <h2>What the reusable-workflow article adds</h2>
+        <p>
+          The article describes a stronger pattern: put cloud login inside an approved reusable workflow, then
+          make the cloud provider trust only that reusable workflow. GitHub exposes the called workflow path in
+          the <code>job_workflow_ref</code> claim.
+        </p>
+        <pre><code>caller workflow
+  uses: org/repo/.github/workflows/approved-plan.yml@v1
+
+OIDC claim
+  job_workflow_ref = org/repo/.github/workflows/approved-plan.yml@refs/tags/v1</code></pre>
+        <p style="margin-top: 16px;">
+          This pattern is useful when many repositories or workflows should use one approved deployment path.
+          It is more structure than we need right now, but it is a good future option.
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>How we should apply this now</h2>
+        <div class="grid">
+          <div>
+            <h3>Near-term fix</h3>
+            <ul>
+              <li>Keep the current normal workflow.</li>
+              <li>Keep <code>sub = repo:...:pull_request</code>.</li>
+              <li>Add <code>repository = chris-jelly/jellylabs-dsc</code>.</li>
+              <li>Add <code>workflow = aws-infrastructure</code>.</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Why this is enough for now</h3>
+            <ul>
+              <li>It blocks other differently named PR workflows from using the plan role.</li>
+              <li>It keeps the PR small.</li>
+              <li>It avoids repo-level OIDC subject customization.</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Future hardening</h3>
+            <ul>
+              <li>Move cloud-authenticated steps into a reusable workflow.</li>
+              <li>Constrain AWS trust with <code>job_workflow_ref</code>.</li>
+              <li>Optionally customize GitHub's <code>sub</code> claim if direct claims are not enough.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout warn">
+          <strong>Caveat:</strong> <code>workflow</code> identifies the workflow name, not the file path. A reusable workflow
+          plus <code>job_workflow_ref</code> gives a stronger path-based control, but requires a larger workflow design change.
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Proposed trust-policy direction</h2>
+        <p>The plan role should require all of these claims:</p>
+        <pre><code>aud        = sts.amazonaws.com
+sub        = repo:chris-jelly/jellylabs-dsc:pull_request
+repository = chris-jelly/jellylabs-dsc
+workflow   = aws-infrastructure</code></pre>
+        <p style="margin-top: 16px;">
+          That narrows the role from “any pull request workflow in this repo” to “the AWS infrastructure pull request
+          workflow in this repo.” If the workflow architecture grows, revisit the reusable-workflow pattern.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
