@@ -22,6 +22,8 @@ locals {
   state_bucket_arn           = "arn:${data.aws_partition.current.partition}:s3:::${var.state_bucket_name}"
   workload_state_key_glob    = "${var.workload_state_key_prefix}/*/global.tfstate"
   workload_state_prefix_glob = "${var.workload_state_key_prefix}/*"
+  heartbeat_topic_arn        = "arn:${data.aws_partition.current.partition}:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:homelab-uptime-alerts"
+  heartbeat_secret_arn       = "arn:${data.aws_partition.current.partition}:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.lab_resource_prefix}homelab-heartbeat-token-*"
 }
 
 resource "aws_iam_openid_connect_provider" "github" {
@@ -168,7 +170,23 @@ data "aws_iam_policy_document" "heartbeat_checker" {
   statement {
     sid       = "PublishUptimeAlerts"
     actions   = ["sns:Publish"]
-    resources = ["arn:${data.aws_partition.current.partition}:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${var.lab_resource_prefix}*"]
+    resources = [local.heartbeat_topic_arn]
+  }
+}
+
+data "aws_iam_policy_document" "heartbeat_receiver_recovery_alerts" {
+  statement {
+    sid       = "PublishRecoveryAlerts"
+    actions   = ["sns:Publish"]
+    resources = [local.heartbeat_topic_arn]
+  }
+}
+
+data "aws_iam_policy_document" "heartbeat_receiver_token_secret" {
+  statement {
+    sid       = "ReadHeartbeatTokenSecret"
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = [local.heartbeat_secret_arn]
   }
 }
 
@@ -180,10 +198,18 @@ data "aws_iam_policy_document" "heartbeat_scheduler" {
   }
 }
 
+data "aws_iam_policy_document" "heartbeat_receiver_combined" {
+  source_policy_documents = [
+    data.aws_iam_policy_document.heartbeat_receiver.json,
+    data.aws_iam_policy_document.heartbeat_receiver_recovery_alerts.json,
+    data.aws_iam_policy_document.heartbeat_receiver_token_secret.json,
+  ]
+}
+
 resource "aws_iam_role_policy" "heartbeat_receiver" {
   name   = "${var.lab_role_prefix}heartbeat-receiver-policy"
   role   = aws_iam_role.heartbeat_receiver.id
-  policy = data.aws_iam_policy_document.heartbeat_receiver.json
+  policy = data.aws_iam_policy_document.heartbeat_receiver_combined.json
 }
 
 resource "aws_iam_role_policy" "heartbeat_checker" {
@@ -280,7 +306,7 @@ data "aws_iam_policy_document" "main" {
       "sns:SetSubscriptionAttributes",
       "sns:Publish",
     ]
-    resources = ["arn:${data.aws_partition.current.partition}:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${var.lab_resource_prefix}*"]
+    resources = [local.heartbeat_topic_arn]
   }
 
   statement {
@@ -370,6 +396,32 @@ data "aws_iam_policy_document" "main" {
       "logs:UntagResource",
     ]
     resources = ["arn:${data.aws_partition.current.partition}:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.lab_resource_prefix}*"]
+  }
+
+  statement {
+    sid       = "CreateHeartbeatTokenSecret"
+    actions   = ["secretsmanager:CreateSecret"]
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "secretsmanager:Name"
+      values   = ["${var.lab_resource_prefix}homelab-heartbeat-token"]
+    }
+  }
+
+  statement {
+    sid = "ManageHeartbeatTokenSecretMetadata"
+    actions = [
+      "secretsmanager:DeleteSecret",
+      "secretsmanager:DescribeSecret",
+      "secretsmanager:GetResourcePolicy",
+      "secretsmanager:ListSecretVersionIds",
+      "secretsmanager:TagResource",
+      "secretsmanager:UntagResource",
+      "secretsmanager:UpdateSecret",
+    ]
+    resources = [local.heartbeat_secret_arn]
   }
 
   statement {
@@ -478,7 +530,7 @@ data "aws_iam_policy_document" "plan" {
       "sns:ListSubscriptionsByTopic",
       "sns:ListTagsForResource",
     ]
-    resources = ["arn:${data.aws_partition.current.partition}:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${var.lab_resource_prefix}*"]
+    resources = [local.heartbeat_topic_arn]
   }
 
   statement {
@@ -532,6 +584,16 @@ data "aws_iam_policy_document" "plan" {
       "logs:ListTagsForResource",
     ]
     resources = ["arn:${data.aws_partition.current.partition}:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.lab_resource_prefix}*"]
+  }
+
+  statement {
+    sid = "PlanSecretsManagerRead"
+    actions = [
+      "secretsmanager:DescribeSecret",
+      "secretsmanager:GetResourcePolicy",
+      "secretsmanager:ListSecretVersionIds",
+    ]
+    resources = [local.heartbeat_secret_arn]
   }
 
   statement {

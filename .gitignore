@@ -17,9 +17,18 @@ override.tf.json
 # Variable files that commonly contain secrets
 *.tfvars
 *.tfvars.json
+!infrastructure/aws/*/production.tfvars
 
 # Local plan output
 *.tfplan
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
 
 # Local backend configuration generated from examples
 infrastructure/aws/*/backend.tf
