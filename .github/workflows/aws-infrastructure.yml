@@ -112,8 +112,13 @@ jobs:
       - id: plan
         name: Run OpenTofu plan
         run: |
+          var_args=()
+          if [ -f production.tfvars ]; then
+            var_args=(-var-file=production.tfvars)
+          fi
+
           set +e
-          tofu plan -detailed-exitcode -no-color -out=tfplan > plan.out 2>&1
+          tofu plan "${var_args[@]}" -detailed-exitcode -no-color -out=tfplan > plan.out 2>&1
           status=$?
           set -e
 
@@ -242,4 +247,11 @@ jobs:
             -backend-config="encrypt=true"
       - run: tofu fmt -check -recursive
       - run: tofu validate
-      - run: tofu apply -auto-approve
+      - name: Run OpenTofu apply
+        run: |
+          var_args=()
+          if [ -f production.tfvars ]; then
+            var_args=(-var-file=production.tfvars)
+          fi
+
+          tofu apply "${var_args[@]}" -auto-approve
