@@ -290,7 +290,7 @@ data "aws_iam_policy_document" "main" {
   }
 
   statement {
-    sid = "SnsUptimeAlerts"
+    sid = "SnsUptimeAlertTopic"
     actions = [
       "sns:CreateTopic",
       "sns:DeleteTopic",
@@ -300,13 +300,20 @@ data "aws_iam_policy_document" "main" {
       "sns:TagResource",
       "sns:UntagResource",
       "sns:Subscribe",
-      "sns:Unsubscribe",
       "sns:ListSubscriptionsByTopic",
-      "sns:GetSubscriptionAttributes",
-      "sns:SetSubscriptionAttributes",
       "sns:Publish",
     ]
     resources = [local.heartbeat_topic_arn]
+  }
+
+  statement {
+    sid = "SnsUptimeAlertSubscriptions"
+    actions = [
+      "sns:GetSubscriptionAttributes",
+      "sns:SetSubscriptionAttributes",
+      "sns:Unsubscribe",
+    ]
+    resources = ["*"]
   }
 
   statement {
@@ -523,14 +530,19 @@ data "aws_iam_policy_document" "plan" {
   }
 
   statement {
-    sid = "PlanSnsRead"
+    sid = "PlanSnsTopicRead"
     actions = [
-      "sns:GetSubscriptionAttributes",
       "sns:GetTopicAttributes",
       "sns:ListSubscriptionsByTopic",
       "sns:ListTagsForResource",
     ]
     resources = [local.heartbeat_topic_arn]
+  }
+
+  statement {
+    sid       = "PlanSnsSubscriptionRead"
+    actions   = ["sns:GetSubscriptionAttributes"]
+    resources = ["*"]
   }
 
   statement {

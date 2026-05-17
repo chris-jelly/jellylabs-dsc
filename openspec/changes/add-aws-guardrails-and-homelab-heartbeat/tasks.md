@@ -60,3 +60,4 @@
 - [x] 7.4 Update receiver IAM permissions so the Lambda can read only the heartbeat token secret it needs.
 - [x] 7.5 Update the receiver implementation and tests to load the token from the managed secret at runtime.
 - [x] 7.6 Re-run OpenTofu formatting/validation, function tests, and OpenSpec validation after the configuration hardening changes.
+- [x] 7.7 Split topic-scoped SNS permissions from subscription-level APIs that require wildcard resources.
