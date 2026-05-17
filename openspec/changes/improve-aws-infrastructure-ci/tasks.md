@@ -39,8 +39,9 @@
 - [x] 5.3 Verify the workflow syntax is valid.
 - [x] 5.4 Verify detector behavior locally for a deployable root change, a manual root change, a shared module change, and a workflow/detector change.
 - [x] 5.5 Verify detector behavior locally for main apply root selection, including manual-root exclusion and workflow-only changes.
-- [ ] 5.6 Verify a live PR workflow run creates plans, PR comments, and job summaries for deployable workload roots.
-- [ ] 5.7 Verify a live push-to-main workflow run uses the `aws-production` deployment environment gate before apply.
+- [ ] 5.6 Fully deploy `add-aws-guardrails-and-homelab-heartbeat` so the repository has deployable AWS workload roots for live CI/CD validation.
+- [ ] 5.7 Verify a live PR workflow run for the guardrails/heartbeat workload roots creates plans, PR comments, and job summaries.
+- [ ] 5.8 Verify a live push-to-main workflow run for the guardrails/heartbeat workload roots uses the `aws-production` deployment environment gate before apply.
 
 ## 6. Manual Deployment and GitHub Setup
 
