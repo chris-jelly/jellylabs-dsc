@@ -4,21 +4,16 @@ variable "aws_region" {
   default     = "ca-central-1"
 }
 
-variable "state_bucket_name" {
-  description = "Bootstrap-managed S3 bucket used by AWS workload OpenTofu state."
-  type        = string
-}
-
-variable "identity_state_key" {
-  description = "S3 key for the manually applied identity root state."
-  type        = string
-  default     = "aws/identity/global.tfstate"
-}
-
 variable "resource_prefix" {
   description = "Name prefix for AWS lab resources. Must match the identity root lab resource prefix."
   type        = string
   default     = "jellylabs-"
+}
+
+variable "lab_role_prefix" {
+  description = "IAM role name prefix for identity-managed heartbeat execution roles. Must match the identity root lab role prefix."
+  type        = string
+  default     = "jellylabs-lab-"
 }
 
 variable "lab_name" {

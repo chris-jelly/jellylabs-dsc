@@ -111,8 +111,6 @@ jobs:
             -backend-config="encrypt=true"
       - id: plan
         name: Run OpenTofu plan
-        env:
-          TF_VAR_state_bucket_name: ${{ vars.AWS_STATE_BUCKET }}
         run: |
           var_args=()
           if [ -f production.tfvars ]; then
@@ -250,8 +248,6 @@ jobs:
       - run: tofu fmt -check -recursive
       - run: tofu validate
       - name: Run OpenTofu apply
-        env:
-          TF_VAR_state_bucket_name: ${{ vars.AWS_STATE_BUCKET }}
         run: |
           var_args=()
           if [ -f production.tfvars ]; then

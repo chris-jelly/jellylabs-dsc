@@ -8,16 +8,6 @@ provider "aws" {
 
 data "aws_caller_identity" "current" {}
 
-data "terraform_remote_state" "identity" {
-  backend = "s3"
-
-  config = {
-    bucket = var.state_bucket_name
-    key    = var.identity_state_key
-    region = var.aws_region
-  }
-}
-
 locals {
   common_tags = {
     Lab         = var.lab_name
@@ -28,6 +18,18 @@ locals {
   }
 
   name_prefix = "${var.resource_prefix}homelab-heartbeat"
+}
+
+data "aws_iam_role" "heartbeat_receiver" {
+  name = "${var.lab_role_prefix}heartbeat-receiver"
+}
+
+data "aws_iam_role" "heartbeat_checker" {
+  name = "${var.lab_role_prefix}heartbeat-checker"
+}
+
+data "aws_iam_role" "heartbeat_scheduler" {
+  name = "${var.lab_role_prefix}heartbeat-scheduler"
 }
 
 data "archive_file" "receiver" {
@@ -141,7 +143,7 @@ resource "aws_cloudwatch_log_group" "checker" {
 
 resource "aws_lambda_function" "receiver" {
   function_name    = "${local.name_prefix}-receiver"
-  role             = data.terraform_remote_state.identity.outputs.heartbeat_receiver_role_arn
+  role             = data.aws_iam_role.heartbeat_receiver.arn
   handler          = "receiver.lambda_handler"
   runtime          = "python3.12"
   filename         = data.archive_file.receiver.output_path
@@ -174,7 +176,7 @@ resource "aws_lambda_function_url" "receiver" {
 
 resource "aws_lambda_function" "checker" {
   function_name    = "${local.name_prefix}-checker"
-  role             = data.terraform_remote_state.identity.outputs.heartbeat_checker_role_arn
+  role             = data.aws_iam_role.heartbeat_checker.arn
   handler          = "checker.lambda_handler"
   runtime          = "python3.12"
   filename         = data.archive_file.checker.output_path
@@ -203,7 +205,7 @@ resource "aws_scheduler_schedule" "checker" {
 
   target {
     arn      = aws_lambda_function.checker.arn
-    role_arn = data.terraform_remote_state.identity.outputs.heartbeat_scheduler_role_arn
+    role_arn = data.aws_iam_role.heartbeat_scheduler.arn
   }
 }
 
