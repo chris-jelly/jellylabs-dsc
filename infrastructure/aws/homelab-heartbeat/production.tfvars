@@ -5,14 +5,14 @@
 # GitHub Actions workflow as root-specific TF_VAR_* mappings.
 
 budget_alert_email_addresses = [
-  "replace-budget-alert-email@example.invalid",
+  "christopher.p.jelly@gmail.com",
 ]
 
 uptime_alert_email_addresses = [
-  "replace-uptime-alert-email@example.invalid",
+  "christopher.p.jelly@gmail.com",
 ]
 
-uptime_alert_sms_numbers = []
+uptime_alert_sms_numbers = ["+19054100131"]
 
 heartbeat_service_id          = "homelab-cluster"
 heartbeat_interval_minutes    = 5

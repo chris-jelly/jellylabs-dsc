@@ -61,3 +61,5 @@
 - [x] 7.5 Update the receiver implementation and tests to load the token from the managed secret at runtime.
 - [x] 7.6 Re-run OpenTofu formatting/validation, function tests, and OpenSpec validation after the configuration hardening changes.
 - [x] 7.7 Split topic-scoped SNS permissions from subscription-level APIs that require wildcard resources.
+- [ ] 7.8 Disable the OpenTofu setup wrapper or otherwise preserve `tofu plan -detailed-exitcode` so PR plan comments correctly report changes.
+- [x] 7.9 Replace placeholder heartbeat production alert recipients with the real budget email, uptime email, and optional SMS endpoints before apply.
