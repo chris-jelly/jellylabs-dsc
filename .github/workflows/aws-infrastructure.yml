@@ -224,6 +224,9 @@ jobs:
         working-directory: infrastructure/aws/${{ matrix.root }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
       - uses: opentofu/setup-opentofu@v2
         with:
           tofu_version: 1.11.0
