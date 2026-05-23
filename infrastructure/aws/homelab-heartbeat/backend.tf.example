@@ -1,0 +1,9 @@
+terraform {
+  backend "s3" {
+    bucket         = "jellylabs-tofu-state-example"
+    key            = "aws/homelab-heartbeat/global.tfstate"
+    region         = "ca-central-1"
+    dynamodb_table = "jellylabs-tofu-locks"
+    encrypt        = true
+  }
+}

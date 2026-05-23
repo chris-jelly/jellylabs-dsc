@@ -5,21 +5,26 @@ on:
     paths:
       - "infrastructure/aws/**"
       - ".github/workflows/aws-infrastructure.yml"
+      - "scripts/detect_aws_roots.py"
+      - "scripts/test_detect_aws_roots.py"
   push:
     branches:
       - main
     paths:
       - "infrastructure/aws/**"
       - ".github/workflows/aws-infrastructure.yml"
+      - "scripts/detect_aws_roots.py"
+      - "scripts/test_detect_aws_roots.py"
 
 jobs:
   detect-roots:
     runs-on: ubuntu-latest
     outputs:
       validate_roots: ${{ steps.roots.outputs.validate_roots }}
+      plan_roots: ${{ steps.roots.outputs.plan_roots }}
       apply_roots: ${{ steps.roots.outputs.apply_roots }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -37,57 +42,10 @@ jobs:
             base="$PUSH_BEFORE_SHA"
           fi
 
-          git diff --name-only "$base" "$HEAD_SHA" > changed-files.txt
-
-          python3 <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          manual_roots = {"bootstrap", "identity"}
-          workflow_path = ".github/workflows/aws-infrastructure.yml"
-
-          changed_files = [
-              line.strip()
-              for line in Path("changed-files.txt").read_text().splitlines()
-              if line.strip()
-          ]
-
-          def is_aws_root(root: str) -> bool:
-              root_path = Path("infrastructure/aws") / root
-              return root_path.is_dir() and any(root_path.glob("*.tf"))
-
-          all_roots = sorted(
-              path.name
-              for path in Path("infrastructure/aws").iterdir()
-              if path.is_dir() and is_aws_root(path.name)
-          )
-
-          changed_roots = set()
-          workflow_changed = workflow_path in changed_files
-
-          for file_path in changed_files:
-              parts = Path(file_path).parts
-              if len(parts) >= 4 and parts[0] == "infrastructure" and parts[1] == "aws":
-                  root = parts[2]
-                  if is_aws_root(root):
-                      changed_roots.add(root)
-
-          if os.environ["EVENT_NAME"] == "pull_request" and workflow_changed:
-              validate_roots = all_roots
-          else:
-              validate_roots = sorted(changed_roots)
-
-          apply_roots = sorted(root for root in changed_roots if root not in manual_roots)
-
-          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-              output.write(f"validate_roots={json.dumps(validate_roots)}\n")
-              output.write(f"apply_roots={json.dumps(apply_roots)}\n")
-
-          print("Changed files:", json.dumps(changed_files))
-          print("Validation roots:", json.dumps(validate_roots))
-          print("Apply roots:", json.dumps(apply_roots))
-          PY
+          python3 scripts/detect_aws_roots.py \
+            --event-name "$EVENT_NAME" \
+            --base-sha "$base" \
+            --head-sha "$HEAD_SHA"
 
   validate:
     if: github.event_name == 'pull_request' && needs.detect-roots.outputs.validate_roots != '[]'
@@ -103,18 +61,157 @@ jobs:
       run:
         working-directory: infrastructure/aws/${{ matrix.root }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: opentofu/setup-opentofu@v1
+      - uses: actions/checkout@v6
+      - uses: opentofu/setup-opentofu@v2
         with:
           tofu_version: 1.11.0
       - run: tofu fmt -check -recursive
       - run: tofu init -backend=false
       - run: tofu validate
 
+  plan:
+    if: github.event_name == 'pull_request' && needs.detect-roots.outputs.plan_roots != '[]'
+    needs:
+      - detect-roots
+      - validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    strategy:
+      fail-fast: false
+      matrix:
+        root: ${{ fromJson(needs.detect-roots.outputs.plan_roots) }}
+    defaults:
+      run:
+        working-directory: infrastructure/aws/${{ matrix.root }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: opentofu/setup-opentofu@v2
+        with:
+          tofu_version: 1.11.0
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+          aws-region: ca-central-1
+      - name: Write S3 backend block
+        run: |
+          cat > backend.tf <<'EOF'
+          terraform {
+            backend "s3" {}
+          }
+          EOF
+      - run: |
+          tofu init \
+            -backend-config="bucket=${{ vars.AWS_STATE_BUCKET }}" \
+            -backend-config="key=aws/${{ matrix.root }}/global.tfstate" \
+            -backend-config="region=ca-central-1" \
+            -backend-config="dynamodb_table=${{ vars.AWS_STATE_LOCK_TABLE }}" \
+            -backend-config="encrypt=true"
+      - id: plan
+        name: Run OpenTofu plan
+        run: |
+          var_args=()
+          if [ -f production.tfvars ]; then
+            var_args=(-var-file=production.tfvars)
+          fi
+
+          set +e
+          tofu plan "${var_args[@]}" -detailed-exitcode -no-color -out=tfplan > plan.out 2>&1
+          status=$?
+          set -e
+
+          if [ "$status" -eq 1 ]; then
+            cat plan.out
+            exit 1
+          fi
+
+          tofu show -no-color tfplan > plan.txt
+
+          if [ "$status" -eq 2 ]; then
+            result="changes"
+          else
+            result="no changes"
+          fi
+
+          summary_line=$(grep -E 'Plan: [0-9]+ to add, [0-9]+ to change, [0-9]+ to destroy\.' plan.out || true)
+          if [ -z "$summary_line" ]; then
+            summary_line="No changes."
+          fi
+
+          {
+            echo "result=$result"
+            echo "summary_line=$summary_line"
+          } >> "$GITHUB_OUTPUT"
+      - name: Write plan summary
+        run: |
+          {
+            echo "## AWS OpenTofu plan: ${{ matrix.root }}"
+            echo
+            echo "**Result:** ${{ steps.plan.outputs.result }}"
+            echo
+            echo '${{ steps.plan.outputs.summary_line }}'
+            echo
+            echo '<details><summary>Plan details</summary>'
+            echo
+            echo '```text'
+            cat plan.txt
+            echo '```'
+            echo
+            echo '</details>'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Write PR comment body
+        run: |
+          cat > plan-comment.md <<'EOF'
+          <!-- aws-infrastructure-plan:${{ matrix.root }} -->
+          ## AWS OpenTofu plan: `${{ matrix.root }}`
+
+          **Result:** ${{ steps.plan.outputs.result }}
+
+          ${{ steps.plan.outputs.summary_line }}
+
+          See the workflow job summary for plan details.
+          EOF
+      - name: Publish PR plan comment
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs')
+            const marker = '<!-- aws-infrastructure-plan:${{ matrix.root }} -->'
+            const body = fs.readFileSync('infrastructure/aws/${{ matrix.root }}/plan-comment.md', 'utf8')
+            const { owner, repo } = context.repo
+            const issue_number = context.issue.number
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+            })
+            const existing = comments.find(comment => comment.body?.includes(marker))
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              })
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              })
+            }
+
   apply:
     if: github.event_name == 'push' && needs.detect-roots.outputs.apply_roots != '[]'
     needs: detect-roots
     runs-on: ubuntu-latest
+    environment: aws-production
+    concurrency:
+      group: aws-production-${{ matrix.root }}
+      cancel-in-progress: false
     permissions:
       contents: read
       id-token: write
@@ -126,11 +223,11 @@ jobs:
       run:
         working-directory: infrastructure/aws/${{ matrix.root }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: opentofu/setup-opentofu@v1
+      - uses: actions/checkout@v6
+      - uses: opentofu/setup-opentofu@v2
         with:
           tofu_version: 1.11.0
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_MAIN_ROLE_ARN }}
           aws-region: ca-central-1
@@ -150,4 +247,11 @@ jobs:
             -backend-config="encrypt=true"
       - run: tofu fmt -check -recursive
       - run: tofu validate
-      - run: tofu apply -auto-approve
+      - name: Run OpenTofu apply
+        run: |
+          var_args=()
+          if [ -f production.tfvars ]; then
+            var_args=(-var-file=production.tfvars)
+          fi
+
+          tofu apply "${var_args[@]}" -auto-approve
