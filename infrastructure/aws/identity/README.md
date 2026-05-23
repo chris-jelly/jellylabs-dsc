@@ -7,7 +7,7 @@ Apply this root manually with operator admin credentials after bootstrap creates
 ## Included
 
 - GitHub Actions OIDC provider for `token.actions.githubusercontent.com`
-- Main deployment role trusted by `chris-jelly/jellylabs-dsc` on `main`
+- Main deployment role trusted by the `chris-jelly/jellylabs-dsc` `aws-production` GitHub Environment
 - Pull request plan role trusted by `chris-jelly/jellylabs-dsc` pull request workflows
 - Initial main deployment policy for AWS state access, Budgets, SNS, DynamoDB, Lambda, EventBridge, Scheduler, CloudWatch Logs, and constrained role passing
 - Plan role policy for workload state reads, state locking during planning, and read/list/describe access for supported AWS lab resources
