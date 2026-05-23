@@ -1,4 +1,5 @@
 # Production configuration for the homelab heartbeat AWS root.
+# This file intentionally changes through PRs to exercise root-scoped AWS apply CD.
 #
 # Replace the placeholder email addresses before applying. These values are
 # intentionally versioned with the root instead of being wired into the shared
