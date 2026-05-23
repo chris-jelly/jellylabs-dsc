@@ -284,6 +284,7 @@ data "aws_iam_policy_document" "main" {
       "budgets:CreateSubscriber",
       "budgets:DeleteSubscriber",
       "budgets:DescribeSubscribersForNotification",
+      "budgets:TagResource",
       "budgets:UpdateSubscriber",
     ]
     resources = ["*"]
@@ -392,11 +393,18 @@ data "aws_iam_policy_document" "main" {
   }
 
   statement {
+    sid = "CloudWatchLogsList"
+    actions = [
+      "logs:DescribeLogGroups",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
     sid = "CloudWatchLogsHeartbeat"
     actions = [
       "logs:CreateLogGroup",
       "logs:DeleteLogGroup",
-      "logs:DescribeLogGroups",
       "logs:ListTagsForResource",
       "logs:PutRetentionPolicy",
       "logs:TagResource",
