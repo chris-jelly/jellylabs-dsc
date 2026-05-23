@@ -286,6 +286,7 @@ data "aws_iam_policy_document" "main" {
       "budgets:DescribeSubscribersForNotification",
       "budgets:TagResource",
       "budgets:UpdateSubscriber",
+      "budgets:ViewBudget",
     ]
     resources = ["*"]
   }
