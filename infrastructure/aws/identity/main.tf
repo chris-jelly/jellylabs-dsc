@@ -17,13 +17,13 @@ data "aws_caller_identity" "current" {}
 data "aws_partition" "current" {}
 
 locals {
-  github_subject             = "repo:${var.github_repository}:ref:refs/heads/${var.github_branch}"
-  github_pr_subject          = "repo:${var.github_repository}:pull_request"
-  state_bucket_arn           = "arn:${data.aws_partition.current.partition}:s3:::${var.state_bucket_name}"
-  workload_state_key_glob    = "${var.workload_state_key_prefix}/*/global.tfstate"
-  workload_state_prefix_glob = "${var.workload_state_key_prefix}/*"
-  heartbeat_topic_arn        = "arn:${data.aws_partition.current.partition}:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:homelab-uptime-alerts"
-  heartbeat_secret_arn       = "arn:${data.aws_partition.current.partition}:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.lab_resource_prefix}homelab-heartbeat-token-*"
+  github_main_environment_subject = "repo:${var.github_repository}:environment:${var.github_main_environment}"
+  github_pr_subject               = "repo:${var.github_repository}:pull_request"
+  state_bucket_arn                = "arn:${data.aws_partition.current.partition}:s3:::${var.state_bucket_name}"
+  workload_state_key_glob         = "${var.workload_state_key_prefix}/*/global.tfstate"
+  workload_state_prefix_glob      = "${var.workload_state_key_prefix}/*"
+  heartbeat_topic_arn             = "arn:${data.aws_partition.current.partition}:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:homelab-uptime-alerts"
+  heartbeat_secret_arn            = "arn:${data.aws_partition.current.partition}:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.lab_resource_prefix}homelab-heartbeat-token-*"
 }
 
 resource "aws_iam_openid_connect_provider" "github" {
@@ -51,7 +51,7 @@ data "aws_iam_policy_document" "main_assume_role" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = [local.github_subject]
+      values   = [local.github_main_environment_subject]
     }
   }
 }

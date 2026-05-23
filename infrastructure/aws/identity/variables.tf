@@ -10,10 +10,10 @@ variable "github_repository" {
   default     = "chris-jelly/jellylabs-dsc"
 }
 
-variable "github_branch" {
-  description = "GitHub branch allowed to assume the AWS main deployment role"
+variable "github_main_environment" {
+  description = "GitHub Actions environment allowed to assume the AWS main deployment role"
   type        = string
-  default     = "main"
+  default     = "aws-production"
 }
 
 variable "github_oidc_thumbprints" {
