@@ -17,12 +17,13 @@ Apply this root manually with operator admin credentials after bootstrap creates
 
 1. Copy `backend.tf.example` to `backend.tf` and `backend.hcl.example` to `backend.hcl`.
 2. Set the real state bucket in `backend.hcl`.
-3. Run `tofu init -backend-config=backend.hcl`.
-4. Run `tofu plan -var="state_bucket_name=<bootstrap-state-bucket>"`.
-5. Run `tofu apply -var="state_bucket_name=<bootstrap-state-bucket>"` after review.
-6. Store the `main_role_arn` output as the GitHub repository variable `AWS_MAIN_ROLE_ARN`.
-7. Store the `plan_role_arn` output as the GitHub repository variable `AWS_PLAN_ROLE_ARN`.
-8. Configure the `aws-production` GitHub Environment for apply jobs. Restrict deployments to `main` and add required reviewers if production applies should wait for approval.
+3. Copy `local.auto.tfvars.example` to `local.auto.tfvars` and set the real bootstrap state bucket name. The local file is gitignored and prevents repeated `state_bucket_name` prompts during manual plans.
+4. Run `tofu init -backend-config=backend.hcl`.
+5. Run `tofu plan`.
+6. Run `tofu apply` after review.
+7. Store the `main_role_arn` output as the GitHub repository variable `AWS_MAIN_ROLE_ARN`.
+8. Store the `plan_role_arn` output as the GitHub repository variable `AWS_PLAN_ROLE_ARN`.
+9. Configure the `aws-production` GitHub Environment for apply jobs. Restrict deployments to `main` and add required reviewers if production applies should wait for approval.
 
 ## Permission model
 
