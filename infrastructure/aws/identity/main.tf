@@ -276,6 +276,7 @@ data "aws_iam_policy_document" "main" {
       "budgets:DescribeBudget",
       "budgets:DescribeBudgets",
       "budgets:ModifyBudget",
+      "budgets:ListTagsForResource",
       "budgets:UpdateBudget",
       "budgets:CreateNotification",
       "budgets:DeleteNotification",
