@@ -534,8 +534,15 @@ data "aws_iam_policy_document" "plan" {
       "budgets:DescribeBudgets",
       "budgets:DescribeNotificationsForBudget",
       "budgets:DescribeSubscribersForNotification",
+      "budgets:ListTagsForResource",
       "budgets:ViewBudget",
     ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid       = "PlanCloudWatchLogsList"
+    actions   = ["logs:DescribeLogGroups"]
     resources = ["*"]
   }
 
@@ -602,7 +609,6 @@ data "aws_iam_policy_document" "plan" {
   statement {
     sid = "PlanCloudWatchLogsRead"
     actions = [
-      "logs:DescribeLogGroups",
       "logs:ListTagsForResource",
     ]
     resources = ["arn:${data.aws_partition.current.partition}:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.lab_resource_prefix}*"]
