@@ -45,7 +45,7 @@
 
 - [x] 6.1 Run OpenTofu formatting and validation for the AWS lab stack.
 - [x] 6.2 Run relevant function unit tests or local checks for receiver and checker logic.
-- [ ] 6.3 Confirm SNS email and SMS subscriptions are pending confirmation or confirmed as expected.
+- [x] 6.3 Confirm SNS email and SMS subscriptions are pending confirmation or confirmed as expected.
 - [ ] 6.4 Send a test heartbeat and verify DynamoDB records `last_seen_at` for `homelab-cluster`.
 - [ ] 6.5 Simulate a stale heartbeat and verify one outage alert is published.
 - [ ] 6.6 Verify repeated checker runs do not spam duplicate outage alerts.
