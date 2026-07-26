@@ -59,6 +59,48 @@ Shared modules under `infrastructure/aws/modules/` are not deployable roots. Cha
 
 Manual roots remain outside workload CI planning and apply. If `bootstrap/` or `identity/` plan visibility is needed later, add a separate plan-only workflow with its own credentials and approval model.
 
+## Temporarily mute homelab heartbeat alerts
+
+For a planned homelab outage, disable the `homelab-cluster` entry in the heartbeat registry. The checker skips disabled entries, while the SNS email and SMS subscriptions remain intact. OpenTofu ignores operational changes to this registry item, so a later apply does not remove the mute.
+
+First, refresh the local AWS login if needed:
+
+```bash
+mise run aws-tofu-login
+```
+
+Mute the heartbeat:
+
+```bash
+aws dynamodb update-item \
+  --profile tofu-login \
+  --region ca-central-1 \
+  --table-name jellylabs-homelab-heartbeat-registry \
+  --key '{"service_id":{"S":"homelab-cluster"}}' \
+  --update-expression 'SET enabled = :value' \
+  --expression-attribute-values '{":value":{"BOOL":false}}' \
+  --return-values ALL_NEW
+```
+
+While disabled, the checker does not publish outage reminders, and the heartbeat receiver rejects heartbeats for this service with HTTP 403.
+
+After the server and its heartbeat sender are ready, restore monitoring:
+
+```bash
+aws dynamodb update-item \
+  --profile tofu-login \
+  --region ca-central-1 \
+  --table-name jellylabs-homelab-heartbeat-registry \
+  --key '{"service_id":{"S":"homelab-cluster"}}' \
+  --update-expression 'SET enabled = :value' \
+  --expression-attribute-values '{":value":{"BOOL":true}}' \
+  --return-values ALL_NEW
+```
+
+Have the server submit a heartbeat immediately after re-enabling the entry. Otherwise, the next scheduled check may alert on the old `last_seen_at` value.
+
+Do not mute alerts by removing `uptime_alert_email_addresses` or `uptime_alert_sms_numbers`. Doing so destroys the SNS subscriptions, and restored email subscriptions require confirmation. This procedure affects only heartbeat uptime notifications; AWS Budget alerts remain enabled.
+
 ## Excluded
 
 - Default VPC management
